@@ -91,12 +91,11 @@ tr:hover td{background:#f8f9ff}
   </div>
   <div class="ctrl"><span class="cl">지표</span>
     <button class="btn on" onclick="setM('GSV',this)">GSV</button>
-    <button class="btn" onclick="setM('NSV',this)">NSV</button>
-    <button class="btn" onclick="setM('GM',this)">GM</button>
-    <button class="btn" onclick="setM('COGS',this)">COGS</button>
-    <button class="btn" onclick="setM('GM_PCT',this)">GM%</button>
     <button class="btn" onclick="setM('SD_PCT',this)">SD%</button>
+    <button class="btn" onclick="setM('NSV',this)">NSV</button>
     <button class="btn" onclick="setM('COGS_PCT',this)">COGS%</button>
+    <button class="btn" onclick="setM('GM',this)">GM</button>
+    <button class="btn" onclick="setM('GM_PCT',this)">GM%</button>
   </div>
   <div class="ctrl"><span class="cl">연도</span>
     <button class="btn yr on" onclick="setY('2025',this)">2025</button>
@@ -106,6 +105,22 @@ tr:hover td{background:#f8f9ff}
 <div class="cat-bar" id="catBar">
   <span class="cat-label">카테고리</span>
   <button class="cat-btn on" onclick="setCat('Total',this)">전체 합계</button>
+</div>
+<div class="cat-bar" id="monthBar">
+  <span class="cat-label">기간</span>
+  <button class="cat-btn on" onclick="setMon(-1,this)">연간 전체</button>
+  <button class="cat-btn" onclick="setMon(0,this)">Jan</button>
+  <button class="cat-btn" onclick="setMon(1,this)">Feb</button>
+  <button class="cat-btn" onclick="setMon(2,this)">Mar</button>
+  <button class="cat-btn" onclick="setMon(3,this)">Apr</button>
+  <button class="cat-btn" onclick="setMon(4,this)">May</button>
+  <button class="cat-btn" onclick="setMon(5,this)">Jun</button>
+  <button class="cat-btn" onclick="setMon(6,this)">Jul</button>
+  <button class="cat-btn" onclick="setMon(7,this)">Aug</button>
+  <button class="cat-btn" onclick="setMon(8,this)">Sep</button>
+  <button class="cat-btn" onclick="setMon(9,this)">Oct</button>
+  <button class="cat-btn" onclick="setMon(10,this)">Nov</button>
+  <button class="cat-btn" onclick="setMon(11,this)">Dec</button>
 </div>
 <div class="main">
   <div class="kpi-grid" id="kpiGrid"></div>
@@ -146,6 +161,7 @@ const CAT_KEYS={
 };
 
 let ch='HVAC', metric='GSV', yr='2025', cat='Total';
+let selMons=new Set(); // empty = 연간 전체
 let charts={};
 
 // ── UTILS ──────────────────────────────────────────────────────────────────────
@@ -153,8 +169,24 @@ const isPct=m=>['GM_PCT','SD_PCT','COGS_PCT'].includes(m);
 const sum=a=>a.reduce((s,v)=>s+v,0);
 const sumNZ=a=>sum(a.filter(v=>v!==0));
 const avgNZ=a=>{const nz=a.filter(v=>v!==0);return nz.length?sum(nz)/nz.length:0;}
-const agg=(a,m)=>isPct(m)?avgNZ(a):sumNZ(a);
-const nonNull=(a,i)=>a[i]!==0||i<3?a[i]:null;
+const isAllMons=()=>selMons.size===0;
+
+// Get aggregated value — multi-month aware
+function getVal(arr, m){
+  if(!arr||!arr.length)return 0;
+  if(isAllMons())return isPct(m)?avgNZ(arr):sumNZ(arr);
+  const selected=[...selMons].map(i=>arr[i]||0).filter(v=>v!==0);
+  if(!selected.length)return 0;
+  return isPct(m)?selected.reduce((s,v)=>s+v,0)/selected.length:selected.reduce((s,v)=>s+v,0);
+}
+const agg=(a,m)=>getVal(a,m);
+
+// Label for selected months
+function monLabel(){
+  if(isAllMons())return'연간 전체';
+  if(selMons.size===12)return'연간 전체';
+  return [...selMons].sort((a,b)=>a-b).map(i=>MOS[i]).join(', ');
+}
 
 function fmtN(v){
   if(Math.abs(v)>=1e9)return (v/1e9).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'B';
@@ -213,19 +245,20 @@ function lda(label,data,color,alpha){return{label,data,borderColor:color,backgro
 function buildCatBar(){
   const cats=CAT_CFG[ch]||[];
   const bar=document.getElementById('catBar');
-  bar.innerHTML='<span class="cat-label">카테고리</span>';
-  const totalBtn=document.createElement('button');
-  totalBtn.className='cat-btn'+(cat==='Total'?' on':'');
-  totalBtn.textContent='전체 합계';
-  totalBtn.onclick=()=>{cat='Total';renderAll();};
-  bar.appendChild(totalBtn);
-  cats.forEach(c=>{
-    const b=document.createElement('button');
-    b.className='cat-btn'+(cat===c?' on':'');
-    b.textContent=c;
-    b.onclick=()=>{cat=c;renderAll();};
-    bar.appendChild(b);
-  });
+
+  if(cats.length===0){
+    bar.style.display='none';
+    cat='Total';
+    return;
+  }
+  bar.style.display='flex';
+
+  const allCats=['Total',...cats];
+  // Store cats list globally for index lookup
+  window._currentCats=allCats;
+
+  bar.innerHTML='<span class="cat-label">카테고리</span>' +
+    allCats.map((c,i)=>`<button class="cat-btn${cat===c?' on':''}" onclick="setCatByIdx(${i},this)">${c}</button>`).join('');
 }
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
@@ -234,14 +267,14 @@ function buildKPIs(){
   if(!d.actual_2025)return;
   const{actual,budget,ly}=getKeys();
   const a=agg(d[actual]||[],metric),b=agg(d[budget]||[],metric),l=agg(d[ly]||[],metric);
-  const nb=yr==='2025'?agg(d.budget_2026||[],metric):null;
   const avb=vsC(a,b),aly=vsC(a,l);
   const lyLbl=yr==='2025'?'LY 2024':'LY 2025 (Actual)';
+  const mLbl=monLabel();
   const items=[
-    {icon:'📈',lbl:`${yr} Actual`,val:fmt(a,metric),c:'b',pill:`vs Budget ${avb>=0?'+':''}${avb.toFixed(1)}%`,pos:avb>=0},
-    {icon:'🎯',lbl:`${yr} Budget`,val:fmt(b,metric),c:'o',pill:'연간 목표',pos:null},
-    {icon:'📅',lbl:lyLbl,val:fmt(l,metric),c:'p',pill:`YoY ${aly>=0?'+':''}${aly.toFixed(1)}%`,pos:aly>=0},
-    {icon:'🔭',lbl:yr==='2025'?'2026 Budget':'—',val:nb!==null?fmt(nb,metric):'—',c:'g',pill:nb!==null?`vs ${yr}A ${vsC(nb,a)>=0?'+':''}${vsC(nb,a).toFixed(1)}%`:'',pos:nb!==null?vsC(nb,a)>=0:null}
+    {icon:'📈',lbl:`${yr} Actual (${mLbl})`,val:fmt(a,metric),c:'b',pill:`vs Budget ${avb>=0?'+':''}${avb.toFixed(1)}%`,pos:avb>=0},
+    {icon:'🎯',lbl:`${yr} Budget (${mLbl})`,val:fmt(b,metric),c:'o',pill:'목표 대비',pos:null},
+    {icon:'📅',lbl:`${lyLbl} (${mLbl})`,val:fmt(l,metric),c:'p',pill:`YoY ${aly>=0?'+':''}${aly.toFixed(1)}%`,pos:aly>=0},
+    {icon:'📊',lbl:'달성률',val:`${b!==0?Math.round(a/b*100):0}%`,c:'g',pill:`A vs B`,pos:a>=b}
   ];
   document.getElementById('kpiGrid').innerHTML=items.map(k=>`
     <div class="kpi"><div class="ki ${k.c}">${k.icon}</div>
@@ -259,10 +292,25 @@ function buildTrend(){
   const yF=v=>pct?v.toFixed(1)+'%':fmtN(v);
   const aLbl=`Actual ${yr}`,bLbl=`Budget ${yr}`,lyLbl=yr==='2025'?'LY 2024':'LY 2025';
   const aData=(d[actual]||[]).map((v,i)=>v===0&&i>=3&&yr==='2026'?null:v);
-  document.getElementById('tT').textContent=`${cat==='Total'?ch:cat} ${metric} — 월별 추이 (${yr})`;
+  const mLbl=monLabel();
+  document.getElementById('tT').textContent=`${cat==='Total'?ch:cat} ${metric} — 월별 추이 (${yr}) · ${mLbl}`;
   document.getElementById('tS').textContent=`${aLbl} · ${bLbl} · ${lyLbl}`;
   document.getElementById('tLeg').innerHTML=[['#3b6ef8',aLbl],['#f59e0b',bLbl],['#9ca3af',lyLbl]].map(([c,l])=>`<div class="li"><div class="ld" style="background:${c}"></div>${l}</div>`).join('');
-  mkL('tC',MOS,[lda(aLbl,aData,'rgb(59,110,248)',.06),{...lds(bLbl,d[budget]||[],'#f59e0b',[5,3]),borderWidth:1.5},{...lds(lyLbl,d[ly]||[],'#9ca3af',[3,3]),borderWidth:1.2}],yF);
+  // Point colors: highlight selected months
+  const hasSel=!isAllMons();
+  const ptColors=MOS.map((_,i)=>!hasSel?'#3b6ef8':selMons.has(i)?'#ef4444':'rgba(59,110,248,.2)');
+  const ptRadius=MOS.map((_,i)=>!hasSel?3:selMons.has(i)?6:2);
+
+  dc('tC');
+  const ctx=document.getElementById('tC').getContext('2d');
+  const o=JSON.parse(JSON.stringify(BASE));
+  o.scales.y.ticks.callback=yF;
+  o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${yF(c.raw)}`};
+  charts['tC']=new Chart(ctx,{type:'line',data:{labels:MOS,datasets:[
+    {...lda(aLbl,aData,'rgb(59,110,248)',.06),pointBackgroundColor:ptColors,pointRadius:ptRadius,pointHoverRadius:6},
+    {...lds(bLbl,d[budget]||[],'#f59e0b',[5,3]),borderWidth:1.5},
+    {...lds(lyLbl,d[ly]||[],'#9ca3af',[3,3]),borderWidth:1.2}
+  ]},options:o});
 }
 
 // ── PIE ──────────────────────────────────────────────────────────────────────
@@ -322,22 +370,29 @@ function buildSmall(id,titleId,m2){
 function buildCatChart(){
   dc('catC');
   const cats=CAT_CFG[ch]||[];
-  document.getElementById('chT').textContent=cats.length?`카테고리별 ${metric} 비교 (${ch} · ${yr})`:`채널별 GSV 연간 비교`;
+  const{actual,budget,ly}=getKeys();
+  const lyLbl=yr==='2025'?'LY 2024':'LY 2025';
+  document.getElementById('chT').textContent=cats.length?`카테고리별 ${metric} 비교 (${ch} · ${yr})`:`채널별 GSV 비교 (${yr})`;
   if(!cats.length){
-    // Channel compare chart
     const chs2=['B2C','B2B','AFS'];
-    const{actual,budget,ly}=getKeys();
-    const v=k=>chs2.map(c=>sumNZ(D[`${c}_GSV`]?.[k]||[]));
-    mkB('catC',chs2,[{label:yr==='2025'?'LY 2024':'LY 2025',data:v(ly),backgroundColor:'rgba(156,163,175,.5)',borderRadius:3},{label:`Budget ${yr}`,data:v(budget),backgroundColor:'rgba(245,158,11,.55)',borderRadius:3},{label:`Actual ${yr}`,data:v(actual),backgroundColor:'rgba(59,110,248,.8)',borderRadius:3},{label:yr==='2025'?'Budget 2026':'—',data:yr==='2025'?v('budget_2026'):[0,0,0],backgroundColor:'rgba(139,92,246,.5)',borderRadius:3}],v=>fmtN(v),true);
+    const getV=k=>chs2.map(c=>{const arr=D[`${c}_GSV`]?.[k]||[];return selMon===-1?sumNZ(arr):(arr[selMon]||0);});
+    mkB('catC',chs2,[
+      {label:lyLbl,data:getV(ly),backgroundColor:'rgba(156,163,175,.5)',borderRadius:3},
+      {label:`Budget ${yr}`,data:getV(budget),backgroundColor:'rgba(245,158,11,.55)',borderRadius:3},
+      {label:`Actual ${yr}`,data:getV(actual),backgroundColor:'rgba(59,110,248,.8)',borderRadius:3}
+    ],v=>fmtN(v),true);
     return;
   }
-  const{actual,budget,ly}=getKeys();
   const pct=isPct(metric);
   const yF=v=>pct?v.toFixed(1)+'%':fmtN(v);
   const lyD=cats.map(c=>{const k=`${CAT_KEYS[ch]?.[c]}_${metric}`;return k&&D[k]?agg(D[k][ly]||[],metric):0;});
   const bD=cats.map(c=>{const k=`${CAT_KEYS[ch]?.[c]}_${metric}`;return k&&D[k]?agg(D[k][budget]||[],metric):0;});
   const aD=cats.map(c=>{const k=`${CAT_KEYS[ch]?.[c]}_${metric}`;return k&&D[k]?agg(D[k][actual]||[],metric):0;});
-  mkB('catC',cats,[{label:yr==='2025'?'LY 2024':'LY 2025',data:lyD,backgroundColor:'rgba(156,163,175,.5)',borderRadius:3},{label:`Budget ${yr}`,data:bD,backgroundColor:'rgba(245,158,11,.55)',borderRadius:3},{label:`Actual ${yr}`,data:aD,backgroundColor:aD.map(v=>v>=0?'rgba(59,110,248,.8)':'rgba(239,68,68,.7)'),borderRadius:3}],yF,true);
+  mkB('catC',cats,[
+    {label:lyLbl,data:lyD,backgroundColor:'rgba(156,163,175,.5)',borderRadius:3},
+    {label:`Budget ${yr}`,data:bD,backgroundColor:'rgba(245,158,11,.55)',borderRadius:3},
+    {label:`Actual ${yr}`,data:aD,backgroundColor:aD.map(v=>v>=0?'rgba(59,110,248,.8)':'rgba(239,68,68,.7)'),borderRadius:3}
+  ],yF,true);
 }
 
 // ── TABLE ──────────────────────────────────────────────────────────────────────
@@ -349,17 +404,32 @@ function buildTable(){
   const fV=v=>pct?v.toFixed(2)+'%':fmtFull(v);
   const lyLbl=yr==='2025'?'LY 2024':'LY 2025';
   const title=cat==='Total'?`${ch} ${metric}`:`${cat} ${metric}`;
-  document.getElementById('tbT').textContent=`📋 ${title} — 월별 상세 (${yr})`;
+  document.getElementById('tbT').textContent=`📋 ${title} — ${monLabel()} 상세 (${yr})`;
   let html=`<thead><tr><th>월</th><th>${lyLbl}</th><th>Budget ${yr}</th><th>Actual ${yr}</th><th>A vs Budget</th><th>A vs LY</th></tr></thead><tbody>`;
-  for(let i=0;i<12;i++){
+
+  // Show selected months or all 12
+  const rows = isAllMons() ? Array.from({length:12},(_,i)=>i) : [...selMons].sort((a,b)=>a-b);
+
+  for(const i of rows){
     const l=(d[ly]||[])[i]||0,b=(d[budget]||[])[i]||0,a=(d[actual]||[])[i]||0;
     const isNull=a===0&&i>=3&&yr==='2026';
     const avb=vsC(a,b),aly=vsC(a,l);
-    html+=`<tr><td>${MOS[i]}</td><td>${fV(l)}</td><td>${fV(b)}</td><td class="${isNull?'':'av'}">${isNull?'—':fV(a)}</td><td class="${isNull?'':avb>=0?'pv':'nv'}">${isNull?'—':(avb>=0?'+':'')+avb.toFixed(1)+'%'}</td><td class="${isNull?'':aly>=0?'pv':'nv'}">${isNull?'—':(aly>=0?'+':'')+aly.toFixed(1)+'%'}</td></tr>`;
+    const rowStyle=!isAllMons()&&selMons.has(i)?'background:#eff3ff;':i%2===0?'':'background:#fafafa;';
+    html+=`<tr style="${rowStyle}"><td style="font-weight:700">${MOS[i]}</td><td>${fV(l)}</td><td>${fV(b)}</td><td class="${isNull?'':'av'}">${isNull?'—':fV(a)}</td><td class="${isNull?'':avb>=0?'pv':'nv'}">${isNull?'—':(avb>=0?'+':'')+avb.toFixed(1)+'%'}</td><td class="${isNull?'':aly>=0?'pv':'nv'}">${isNull?'—':(aly>=0?'+':'')+aly.toFixed(1)+'%'}</td></tr>`;
   }
-  const la=agg(d[ly]||[],metric),ba=agg(d[budget]||[],metric),aa=agg(d[actual]||[],metric);
-  const tavb=vsC(aa,ba),taly=vsC(aa,la);
-  html+=`<tr class="tr"><td>연간합계${pct?' (평균)':''}</td><td>${fV(la)}</td><td>${fV(ba)}</td><td>${fV(aa)}</td><td>${tavb>=0?'+':''}${tavb.toFixed(1)}%</td><td>${taly>=0?'+':''}${taly.toFixed(1)}%</td></tr></tbody>`;
+
+  // Show subtotal when specific months selected, full annual total when all
+  if(!isAllMons()&&selMons.size>1){
+    const la=agg(d[ly]||[],metric),ba=agg(d[budget]||[],metric),aa=agg(d[actual]||[],metric);
+    const tavb=vsC(aa,ba),taly=vsC(aa,la);
+    html+=`<tr class="tr"><td>선택 합계${pct?' (평균)':''}</td><td>${fV(la)}</td><td>${fV(ba)}</td><td>${fV(aa)}</td><td>${tavb>=0?'+':''}${tavb.toFixed(1)}%</td><td>${taly>=0?'+':''}${taly.toFixed(1)}%</td></tr>`;
+  }
+  if(isAllMons()){
+    const la=agg(d[ly]||[],metric),ba=agg(d[budget]||[],metric),aa=agg(d[actual]||[],metric);
+    const tavb=vsC(aa,ba),taly=vsC(aa,la);
+    html+=`<tr class="tr"><td>연간합계${pct?' (평균)':''}</td><td>${fV(la)}</td><td>${fV(ba)}</td><td>${fV(aa)}</td><td>${tavb>=0?'+':''}${tavb.toFixed(1)}%</td><td>${taly>=0?'+':''}${taly.toFixed(1)}%</td></tr>`;
+  }
+  html+='</tbody>';
   document.getElementById('tbl').innerHTML=html;
 }
 
@@ -374,6 +444,33 @@ function renderAll(){
 function setCh(v,el){ch=v;cat='Total';document.querySelectorAll('.ctrl:nth-child(1) .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
 function setM(v,el){metric=v;document.querySelectorAll('.ctrl:nth-child(2) .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
 function setY(v,el){yr=v;document.querySelectorAll('.btn.yr').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
+
+// 월 선택: 토글 방식 (복수 선택 가능), 연간 전체 클릭 시 초기화
+function setMon(v,el){
+  if(v===-1){
+    // 연간 전체: 모든 선택 해제
+    selMons.clear();
+    document.querySelectorAll('#monthBar .cat-btn').forEach(b=>b.classList.remove('on'));
+    el.classList.add('on');
+  } else {
+    // 연간 전체 버튼 off
+    document.querySelector('#monthBar .cat-btn').classList.remove('on');
+    if(selMons.has(v)){
+      selMons.delete(v);
+      el.classList.remove('on');
+    } else {
+      selMons.add(v);
+      el.classList.add('on');
+    }
+    // 아무것도 선택 안 된 경우 연간 전체로 복귀
+    if(selMons.size===0){
+      document.querySelector('#monthBar .cat-btn').classList.add('on');
+    }
+  }
+  renderAll();
+}
+function setCat(v,el){cat=v;document.querySelectorAll('#catBar .cat-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
+function setCatByIdx(i,el){cat=(window._currentCats||['Total'])[i]||'Total';document.querySelectorAll('#catBar .cat-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
 
 renderAll();
 </script>
