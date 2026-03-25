@@ -3,501 +3,378 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HVAC Performance Dashboard — GPC 2025</title>
+<title>HVAC Performance Dashboard v2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --surface2: #222636;
-    --border: #2e3350;
-    --text: #e8eaf6;
-    --text-muted: #7b82a8;
-    --blue: #4f8ef7;
-    --green: #34c98a;
-    --orange: #f7a34f;
-    --red: #f75c5c;
-    --purple: #a78bfa;
-    --teal: #2dd4bf;
-    --yellow: #fbbf24;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
-  
-  /* HEADER */
-  .header {
-    background: linear-gradient(135deg, #1a1d27 0%, #1e2340 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 32px;
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-  }
-  .header-left h1 { font-size: 1.4rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
-  .header-left p { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
-  .badge { display: inline-block; background: #1e3a5f; color: var(--blue); font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(79,142,247,0.3); }
-
-  /* CONTROLS */
-  .controls {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 32px;
-    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-  }
-  .ctrl-group { display: flex; gap: 6px; align-items: center; }
-  .ctrl-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  .tab-btn {
-    background: transparent; border: 1px solid var(--border); color: var(--text-muted);
-    padding: 5px 14px; border-radius: 6px; font-size: 0.78rem; cursor: pointer; transition: all 0.15s;
-  }
-  .tab-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .tab-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
-  .sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
-
-  /* MAIN */
-  .main { padding: 24px 32px; display: grid; gap: 20px; }
-
-  /* KPI CARDS */
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  .kpi-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 18px 20px; position: relative; overflow: hidden;
-  }
-  .kpi-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  }
-  .kpi-card.blue::before { background: var(--blue); }
-  .kpi-card.green::before { background: var(--green); }
-  .kpi-card.orange::before { background: var(--orange); }
-  .kpi-card.purple::before { background: var(--purple); }
-  .kpi-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .kpi-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.03em; }
-  .kpi-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
-  .pill { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
-  .pill.pos { background: rgba(52,201,138,0.15); color: var(--green); }
-  .pill.neg { background: rgba(247,92,92,0.15); color: var(--red); }
-  .pill.neu { background: rgba(79,142,247,0.15); color: var(--blue); }
-
-  /* CHART CARDS */
-  .chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
-  .chart-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  .chart-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .chart-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px;
-  }
-  .chart-card h3 { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-  .chart-card p { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 16px; }
-  .chart-wrap { position: relative; }
-
-  /* TABLE */
-  .table-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; overflow-x: auto;
-  }
-  .table-card h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-  th { background: var(--surface2); color: var(--text-muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 12px; text-align: right; white-space: nowrap; }
-  th:first-child { text-align: left; }
-  td { padding: 7px 12px; text-align: right; border-top: 1px solid var(--border); white-space: nowrap; }
-  td:first-child { text-align: left; font-weight: 600; color: var(--text); }
-  tr:hover td { background: rgba(255,255,255,0.03); }
-  .pos-val { color: var(--green); }
-  .neg-val { color: var(--red); }
-  .muted-val { color: var(--text-muted); }
-
-  /* LEGEND */
-  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); }
-  .legend-dot { width: 10px; height: 3px; border-radius: 2px; }
-
-  /* WATERFALL */
-  .wf-bar-wrap { display: flex; flex-direction: column; gap: 6px; }
-  .wf-row { display: flex; align-items: center; gap: 10px; }
-  .wf-label { font-size: 0.72rem; color: var(--text-muted); width: 36px; text-align: right; }
-  .wf-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; position: relative; overflow: hidden; }
-  .wf-fill { height: 100%; border-radius: 4px; position: absolute; left: 0; top: 0; display: flex; align-items: center; padding-left: 6px; font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
-  .wf-val { font-size: 0.7rem; color: var(--text-muted); width: 52px; text-align: right; }
-
-  @media (max-width: 900px) {
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-    .chart-row, .chart-row-3, .chart-row-2 { grid-template-columns: 1fr; }
-    .main { padding: 16px; }
-    .header, .controls { padding: 14px 16px; }
-  }
+:root {
+  --bg:#f0f2f7;--surface:#fff;--surface2:#f7f8fc;--border:#e2e6f0;
+  --text:#1a1f36;--muted:#6b7280;--light:#9ca3af;
+  --blue:#3b6ef8;--blue-l:#eff3ff;--green:#10b981;--green-l:#ecfdf5;
+  --orange:#f59e0b;--orange-l:#fffbeb;--red:#ef4444;--red-l:#fef2f2;
+  --purple:#8b5cf6;--purple-l:#f5f3ff;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 4px 12px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --r:14px;--r2:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',-apple-system,sans-serif;min-height:100vh;font-size:13px}
+.header{background:linear-gradient(135deg,#1a1f36,#2d3461 50%,#1e3a5f);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header h1{font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.02em}
+.header p{font-size:.72rem;color:rgba(255,255,255,.5);margin-top:2px}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:20px}
+.badge-b{background:rgba(59,110,248,.2);color:#93b4fc;border:1px solid rgba(59,110,248,.3)}
+.badge-g{background:rgba(16,185,129,.2);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)}
+.controls{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:stretch;flex-wrap:wrap;box-shadow:var(--sh)}
+.ctrl{display:flex;align-items:center;gap:5px;padding:9px 18px 9px 0;border-right:1px solid var(--border);margin-right:16px}
+.ctrl:last-child{border-right:none;margin-right:0}
+.cl{font-size:.65rem;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.08em;margin-right:3px;white-space:nowrap}
+.btn{background:transparent;border:1px solid transparent;color:var(--muted);padding:4px 11px;border-radius:6px;font-size:.72rem;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--blue-l);color:var(--blue);border-color:rgba(59,110,248,.2)}
+.btn.on{background:var(--blue);color:#fff;font-weight:600;box-shadow:0 2px 6px rgba(59,110,248,.3)}
+.btn.yr.on{background:var(--purple);box-shadow:0 2px 6px rgba(139,92,246,.3)}
+.btn.yr:hover{background:var(--purple-l);color:var(--purple);border-color:rgba(139,92,246,.2)}
+.cat-bar{background:#fff;border-bottom:1px solid var(--border);padding:6px 28px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;box-shadow:var(--sh)}
+.cat-label{font-size:.65rem;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:.08em;margin-right:4px}
+.cat-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.cat-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.cat-btn.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600}
+.main{padding:18px 28px 28px;display:grid;gap:16px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);transition:box-shadow .2s}
+.kpi:hover{box-shadow:var(--sh2)}
+.ki{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;margin-bottom:8px}
+.ki.b{background:var(--blue-l)}.ki.g{background:var(--green-l)}.ki.o{background:var(--orange-l)}.ki.p{background:var(--purple-l)}
+.kl{font-size:.67rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.kv{font-size:1.45rem;font-weight:800;letter-spacing:-.03em;line-height:1}
+.kv.b{color:var(--blue)}.kv.g{color:var(--green)}.kv.o{color:var(--orange)}.kv.p{color:var(--purple)}
+.ks{font-size:.68rem;color:var(--muted);margin-top:7px}
+.pill{display:inline-flex;align-items:center;font-size:.66rem;font-weight:700;padding:2px 6px;border-radius:4px}
+.pill.pos{background:var(--green-l);color:var(--green)}.pill.neg{background:var(--red-l);color:var(--red)}.pill.neu{background:var(--blue-l);color:var(--blue)}
+.r2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.r2x{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--sh2)}
+.ch{margin-bottom:12px}.ch h3{font-size:.79rem;font-weight:700;color:var(--text)}.ch p{font-size:.68rem;color:var(--muted);margin-top:2px}
+.leg{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:4px;font-size:.67rem;color:var(--muted);font-weight:500}
+.ld{width:18px;height:3px;border-radius:2px;flex-shrink:0}
+.cw{position:relative}
+.tbl-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);overflow-x:auto}
+.tbl-card h3{font-size:.79rem;font-weight:700;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:.72rem}
+thead tr{background:var(--surface2)}
+th{color:var(--muted);font-weight:700;font-size:.64rem;text-transform:uppercase;letter-spacing:.05em;padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:2px solid var(--border)}
+th:first-child{text-align:left}
+td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;color:var(--muted)}
+td:first-child{text-align:left;font-weight:600;color:var(--text)}
+tbody tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8f9ff}
+.tr td{font-weight:700;background:var(--blue-l)!important;color:var(--blue)!important}
+.tr td:first-child{color:var(--blue)!important}
+.pv{color:var(--green)!important;font-weight:600}.nv{color:var(--red)!important;font-weight:600}.av{color:var(--blue)!important;font-weight:700}
+@media(max-width:1000px){.kpi-grid{grid-template-columns:1fr 1fr}.r2,.r3,.r2x{grid-template-columns:1fr}.main,.header,.controls,.cat-bar{padding-left:14px;padding-right:14px}}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <div class="header-left">
-    <h1>📊 HVAC Performance Dashboard</h1>
-    <p>GPC Performance Report · FY2025 · Closing Month: Dec &nbsp;|&nbsp; Actual vs Budget vs Last Year</p>
-  </div>
-  <span class="badge">2025 Full Year Closed</span>
+  <div><h1>📊 HVAC Performance Dashboard</h1><p>GPC Report · FY2025/2026 · Actual vs Budget vs Prior Year · 카테고리별 분석 포함</p></div>
+  <div class="badges"><span class="badge badge-b">✓ 2025 Full Year</span><span class="badge badge-g">● 2026 YTD Mar</span></div>
 </div>
-
 <div class="controls">
-  <div class="ctrl-group">
-    <span class="ctrl-label">채널</span>
-    <button class="tab-btn active" onclick="setChannel('HVAC')">HVAC Total</button>
-    <button class="tab-btn" onclick="setChannel('B2C')">B2C</button>
-    <button class="tab-btn" onclick="setChannel('B2B')">B2B</button>
-    <button class="tab-btn" onclick="setChannel('AFS')">AFS</button>
+  <div class="ctrl"><span class="cl">채널</span>
+    <button class="btn on" onclick="setCh('HVAC',this)">HVAC Total</button>
+    <button class="btn" onclick="setCh('B2C',this)">B2C</button>
+    <button class="btn" onclick="setCh('B2B',this)">B2B</button>
+    <button class="btn" onclick="setCh('AFS',this)">AFS</button>
   </div>
-  <div class="sep"></div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">지표</span>
-    <button class="tab-btn active" onclick="setMetric('GSV')">GSV</button>
-    <button class="tab-btn" onclick="setMetric('NSV')">NSV</button>
-    <button class="tab-btn" onclick="setMetric('GM')">Gross Margin</button>
-    <button class="tab-btn" onclick="setMetric('GM_PCT')">GM%</button>
+  <div class="ctrl"><span class="cl">지표</span>
+    <button class="btn on" onclick="setM('GSV',this)">GSV</button>
+    <button class="btn" onclick="setM('NSV',this)">NSV</button>
+    <button class="btn" onclick="setM('GM',this)">GM</button>
+    <button class="btn" onclick="setM('COGS',this)">COGS</button>
+    <button class="btn" onclick="setM('GM_PCT',this)">GM%</button>
+    <button class="btn" onclick="setM('SD_PCT',this)">SD%</button>
+    <button class="btn" onclick="setM('COGS_PCT',this)">COGS%</button>
+  </div>
+  <div class="ctrl"><span class="cl">연도</span>
+    <button class="btn yr on" onclick="setY('2025',this)">2025</button>
+    <button class="btn yr" onclick="setY('2026',this)">2026</button>
   </div>
 </div>
-
+<div class="cat-bar" id="catBar">
+  <span class="cat-label">카테고리</span>
+  <button class="cat-btn on" onclick="setCat('Total',this)">전체 합계</button>
+</div>
 <div class="main">
-  <!-- KPI CARDS -->
   <div class="kpi-grid" id="kpiGrid"></div>
-
-  <!-- MAIN TREND + PIE -->
-  <div class="chart-row">
-    <div class="chart-card">
-      <h3 id="trendTitle">HVAC GSV — 월별 실적 vs 예산 vs 전년</h3>
-      <p>2025 Actual · Budget · Last Year 2024 월별 비교</p>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Actual 2025</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--orange);opacity:0.7"></div>Budget 2025</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--text-muted);opacity:0.5"></div>LY 2024</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--purple);opacity:0.7"></div>Budget 2026</div>
-      </div>
-      <div class="chart-wrap" style="height:240px"><canvas id="trendChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>채널별 NSV 구성 (2025 Actual)</h3>
-      <p>B2C / B2B / AFS 비중 — 연간 기준</p>
-      <div class="chart-wrap" style="height:240px"><canvas id="pieChart"></canvas></div>
-    </div>
+  <div class="r2">
+    <div class="card"><div class="ch"><h3 id="tT">월별 추이</h3><p id="tS">Actual · Budget · Prior Year</p></div><div class="leg" id="tLeg"></div><div class="cw" style="height:225px"><canvas id="tC"></canvas></div></div>
+    <div class="card"><div class="ch"><h3>채널별 NSV 구성</h3><p id="pieSub">선택 연도 Actual 기준</p></div><div class="cw" style="height:225px"><canvas id="pC"></canvas></div></div>
   </div>
-
-  <!-- AVB QUARTERLY + GM% TREND -->
-  <div class="chart-row-2">
-    <div class="chart-card">
-      <h3>분기별 Actual vs Budget (2025)</h3>
-      <p>현재 채널 · 선택 지표 기준 달성률</p>
-      <div class="chart-wrap" style="height:220px"><canvas id="avbChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>HVAC Gross Margin% 월별 추이</h3>
-      <p>Actual 2025 vs Budget 2025 vs LY 2024</p>
-      <div class="chart-wrap" style="height:220px"><canvas id="gmPctChart"></canvas></div>
-    </div>
+  <div class="r2x">
+    <div class="card"><div class="ch"><h3 id="qT">분기별 Actual vs Budget</h3><p>달성률 색상: 초과(초록)/90%이상(주황)/미달(빨강)</p></div><div class="cw" style="height:205px"><canvas id="qC"></canvas></div></div>
+    <div class="card"><div class="ch"><h3>월별 달성률 (Actual/Budget)</h3><p id="acSub">현재 채널 · 선택 지표</p></div><div class="cw" style="height:205px"><canvas id="aC"></canvas></div></div>
   </div>
-
-  <!-- CHANNEL COMPARE + WATERFALL -->
-  <div class="chart-row-2">
-    <div class="chart-card">
-      <h3>채널별 GSV 연간 비교</h3>
-      <p>LY 2024 · Budget 2025 · Actual 2025 · Budget 2026</p>
-      <div class="chart-wrap" style="height:220px"><canvas id="channelChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>월별 달성률 (Actual / Budget)</h3>
-      <p>현재 채널 · 선택 지표 · 2025</p>
-      <div class="chart-wrap" style="height:220px"><canvas id="achieveChart"></canvas></div>
-    </div>
+  <div class="r3">
+    <div class="card"><div class="ch"><h3 id="gT">GM% 추이</h3><p>Actual vs Budget vs PY</p></div><div class="cw" style="height:180px"><canvas id="gC"></canvas></div></div>
+    <div class="card"><div class="ch"><h3 id="sT">SD% 추이</h3><p>(GSV−NSV)/GSV</p></div><div class="cw" style="height:180px"><canvas id="sC"></canvas></div></div>
+    <div class="card"><div class="ch"><h3 id="coT">COGS% 추이</h3><p>COGS/GSV</p></div><div class="cw" style="height:180px"><canvas id="coC"></canvas></div></div>
   </div>
-
-  <!-- DATA TABLE -->
-  <div class="table-card">
-    <h3 id="tableTitle">📋 HVAC GSV — 월별 상세 데이터 (단위: M)</h3>
-    <table id="dataTable"></table>
-  </div>
+  <div class="card"><div class="ch"><h3 id="chT">카테고리별 GSV 연간 비교</h3><p>LY · Budget · Actual — 현재 채널 기준</p></div><div class="cw" style="height:200px"><canvas id="catC"></canvas></div></div>
+  <div class="tbl-card"><h3 id="tbT">📋 월별 상세</h3><table id="tbl"></table></div>
 </div>
 
 <script>
-// ─── DATA ───────────────────────────────────────────────────────────────────
-const RAW = {"data":{"HVAC_GSV":{"ly_2024":[93828198.64,104097597.86,100739890.04,89925238.79,112106703.32,88415072.82,72271229.92,103694456.56,122092335.72,103975405.28,75987884.07,72170871.93],"budget_2025":[91501654.40,93783368.08,104319590.23,109629845.31,129729378.41,115113341.62,106599777.21,123891370.42,123803263.73,128611255.33,102325710.60,95631165.03],"actual_2025":[80595213.77,94796896.11,99625026.50,89677083.29,89147615.07,96629201.17,75135120.41,92150866.01,91713066.61,79617591.97,61848720.80,61443049.82],"budget_2026":[115014552.40,140915246.53,127966340.84,118284193.43,141376968.14,127650539.06,115831630.48,124300791.12,135927720.65,125211343.42,108047106.88,99473567.05],"budget_q_2025":[289604612.71,354472565.34,354294411.36,326568130.96],"actual_q_2025":[275017136.38,275453899.53,258999053.03,202909362.59],"budget_q_2026":[383896139.76,387311700.63,376060142.25,332732017.36],"actual_q_2026":[259263898.86,0,0,0]},"HVAC_NSV":{"ly_2024":[81006052.07,91540338.51,90347022.00,79919610.46,90183503.99,77126281.81,63127479.02,90347647.21,105443378.58,94563837.69,68588349.32,66329038.30],"budget_2025":[85680034.45,87946852.44,96417136.99,101068014.78,117338562.65,105068397.26,99850837.45,114334040.66,114245393.17,118150763.14,96161677.83,90542742.61],"actual_2025":[76271718.65,88582013.12,85587820.75,78433741.96,82794542.18,88667217.99,67533785.45,79341554.40,83965673.01,73230091.44,59013116.79,63900893.26],"budget_2026":[105033494.66,124340056.22,117598385.88,108087555.39,125662309.23,115641429.09,106099498.01,113071808.86,121228113.82,113190702.58,100595512.02,94053305.89],"budget_q_2025":[270044023.89,323474974.69,328430271.27,304855183.58],"actual_q_2025":[250441552.52,249895502.12,230841012.86,196144101.50],"budget_q_2026":[346971936.76,349391293.72,340399420.70,307839520.49],"actual_q_2026":[230832874.42,0,0,0]},"HVAC_COGS":{"ly_2024":[65091321.54,76112389.56,65791757.73,60092863.02,75039233.44,61064333.04,50886790.88,70489267.51,85392841.49,74680144.42,53607342.90,50708968.77],"budget_2025":[66861234.95,67697524.26,75256959.65,78829190.97,92819712.35,82102633.16,75696658.25,88184699.95,88349767.94,92113041.80,73436375.08,68771506.30],"actual_2025":[56137690.72,69267421.43,66233311.24,64814470.99,64596589.76,66107252.29,52511925.92,66617434.21,65350419.89,57299959.78,50498835.58,37420300.65],"budget_2026":[83477803.95,102046386.17,92859828.88,85747426.85,102430555.06,92655930.09,83912466.51,90248399.75,98369712.66,90835388.14,78429512.03,72232407.87],"budget_q_2025":[209815718.86,253751536.49,252231126.13,234320923.18],"actual_q_2025":[191638423.39,195518313.04,184479780.02,145219096.01],"budget_q_2026":[278384019.00,280833911.00,272530578.91,241497308.04],"actual_q_2026":[187867888.83,0,0,0]},"HVAC_GM":{"ly_2024":[18493984.03,19304368.95,27913316.77,22410727.44,19985782.05,17540381.27,12549558.14,20388461.70,22656297.09,20834858.27,16221145.89,16350093.98],"budget_2025":[20200136.61,21800264.98,22745966.29,24004281.31,26633441.42,24638980.37,25093934.16,27836449.93,27621123.33,27950009.95,23691572.75,22547049.26],"actual_2025":[20117774.77,20637881.51,22336031.68,16198880.41,20600472.44,25782494.86,17852715.95,17122913.34,24246121.80,16657975.39,8571553.21,28848607.12],"budget_2026":[23618057.71,26000296.24,27521952.73,24736642.34,26977137.79,25790775.47,24478921.35,25440358.43,26377694.18,25047756.11,23866570.63,23026405.20],"budget_q_2025":[64746367.88,75276703.10,80551507.43,74188631.96],"actual_q_2025":[63091687.96,62581847.71,59221751.08,54078135.72],"budget_q_2026":[77140306.67,77504555.59,76296973.96,71940731.95],"actual_q_2026":[52908202.19,0,0,0]},"B2C_GSV":{"ly_2024":[40949926.54,44191331.06,44173498.01,30285383.99,60765433.00,43070103.59,27008913.96,54850348.72,74486514.48,51423608.64,28431778.19,25284529.22],"budget_2025":[35501654.40,37083368.08,47049590.23,51109845.31,70479378.41,55143341.62,34663110.54,52104703.76,52116597.06,57444588.67,31769043.93,25474498.36],"actual_2025":[25544508.11,39811953.74,46330081.94,35630183.33,28135473.16,33078806.17,25011509.51,40994153.57,38237462.36,24219782.66,6921348.32,5005274.64],"budget_2026":[37514552.40,63415246.53,50466340.84,40784193.43,63876968.14,50150539.06,38331630.48,46800791.12,58427720.65,47711343.42,30547106.88,21973567.05],"budget_q_2025":[119634612.71,176732565.34,138884411.36,114688130.96],"actual_q_2025":[111686543.79,96844462.66,104243125.44,36146405.62],"budget_q_2026":[151396139.76,154811700.63,143560142.25,100232017.36],"actual_q_2026":[97765457.19,0,0,0]},"B2C_NSV":{"ly_2024":[28402064.78,31883410.17,34126469.72,20537478.19,39277026.46,32046375.11,18257794.46,41805381.04,58147932.39,42448926.07,21352767.35,18334555.00],"budget_2025":[30331334.45,31898152.44,39798436.99,43199314.78,58739862.65,45749697.26,28710204.12,43343407.32,43354759.83,47780129.81,26401044.50,21182109.27],"actual_2025":[21454366.99,33786419.99,32555954.42,24649765.43,22341866.01,25745447.48,18202404.00,29122250.80,31342281.39,18632210.97,4216033.50,6176553.29],"budget_2026":[29329299.28,48635860.84,41894190.50,32383360.01,49958113.85,39937233.72,30395302.64,37367613.48,45523918.44,37486507.20,24891316.64,18349110.51],"budget_q_2025":[102027923.89,147688874.69,115408371.27,95363283.58],"actual_q_2025":[87796741.41,72737078.92,78666936.18,29024797.76],"budget_q_2026":[119859350.63,122278707.59,113286834.56,80726934.36],"actual_q_2026":[75576976.85,0,0,0]},"B2C_COGS":{"ly_2024":[26761200.08,30246031.01,24433957.12,19254025.94,38982964.85,28787579.18,20201444.41,37436802.54,51784278.54,37051921.26,19748243.22,17358686.80],"budget_2025":[26775841.86,27196392.07,34558794.92,37381308.94,50932355.69,39882562.77,24886654.56,37520221.64,37557789.63,41396277.22,22895777.06,18396763.19],"actual_2025":[18412943.06,29199144.75,32517444.73,25446138.05,20913902.73,24938734.57,18414397.40,30207684.04,28803156.36,17651794.30,4980982.77,3291777.61],"budget_2026":[26935149.42,45503731.63,36317174.34,29204772.32,45887900.52,36113275.55,27369811.97,33705745.21,41827058.12,34292733.60,21886857.49,15689753.33],"budget_q_2025":[88531028.86,128196227.41,99964665.82,82688817.47],"actual_q_2025":[80129532.54,71298775.35,77425237.80,25924554.68],"budget_q_2026":[108756055.39,111205948.39,102902615.30,71869344.43],"actual_q_2026":[71230188.80,0,0,0]},"B2C_GM":{"ly_2024":[4327617.20,5713799.16,12941365.10,3736532.25,4875173.11,4937228.43,-1434779.95,4918213.50,8981913.85,6518519.81,3027413.19,1905892.65],"budget_2025":[5145163.03,6461030.50,7033764.35,7791796.68,10130431.41,7748684.10,4971637.84,7718628.24,7730801.65,8504474.53,4679870.77,3769492.37],"actual_2025":[3233170.78,6118898.40,2743211.19,1727078.16,3595080.64,4050075.41,2229338.33,2681913.24,7911857.04,1720593.73,-499344.27,3726416.19],"budget_2026":[4217856.28,6600094.81,8121751.29,5336440.91,7576936.36,6390574.04,5078719.92,6040157.00,6977492.75,5647554.68,4466369.20,3626203.77],"budget_q_2025":[18639957.88,25670912.18,20421067.74,16953837.67],"actual_q_2025":[12095280.37,9372234.20,12823108.61,4947665.65],"budget_q_2026":[18939702.38,19303951.30,18096369.66,13740127.65],"actual_q_2026":[12461948.44,0,0,0]},"B2B_GSV":{"ly_2024":[50293008.94,56561403.82,52690018.42,54744098.06,47249997.89,41424020.24,40690020.97,43093245.03,45095904.80,47043689.51,44548324.72,40733539.27],"budget_2025":[52500000,52500000,52500000,52500000,52500000,52500000,64166666.67,64166666.67,64166666.67,64166666.67,64166666.67,64166666.67],"actual_2025":[51054166.79,51936820.54,49731548.37,50627502.33,56433618.87,57698030.09,44262565.35,45688090.55,48484202.60,49064382.80,49393881.19,48423456.52],"budget_2026":[70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33],"budget_q_2025":[157500000,157500000,192500000,192500000],"actual_q_2025":[152722535.70,164759151.29,138434858.50,146881720.51],"budget_q_2026":[212500000,212500000,212500000,212500000],"actual_q_2026":[144307982.54,0,0,0]},"B2B_NSV":{"ly_2024":[50018724.13,56312065.35,52344178.67,54486375.53,46815205.11,41158957.71,40297389.57,42791403.35,44785529.75,46606804.49,44227800.80,41841679.86],"budget_2025":[51848700,51848700,51848700,51848700,51848700,51848700,63370633.33,63370633.33,63370633.33,63370633.33,63370633.33,63370633.33],"actual_2025":[50820812.79,51747471.29,49468470.14,50364578.89,55874153.13,57069405.60,43470335.91,44750681.71,47631989.97,48292578.96,49235467.01,49710021.31],"budget_2026":[69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71],"budget_q_2025":[155546100,155546100,190111900,190111900],"actual_q_2025":[152036754.22,163308137.62,135853007.59,147238067.28],"budget_q_2026":[207112586.13,207112586.13,207112586.13,207112586.13],"actual_q_2026":[138236148.20,0,0,0]},"B2B_COGS":{"ly_2024":[36695164.60,44367247.54,39848062.68,39051348.98,34806867.86,30095499.98,28721711.48,29398831.24,32152026.82,34155588.90,32578097.82,29223674.28],"budget_2025":[38121792.38,38121792.38,38121792.38,38121792.38,38121792.38,38121792.38,46593301.80,46593301.80,46593301.80,46593301.80,46593301.80,46593301.80],"actual_2025":[36578139.53,38968217.23,32574049.68,37782774.90,41724787.03,39486029.82,31842205.21,33743380.70,34232791.47,35912128.31,35323468.64,29359927.09],"budget_2026":[52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50,52697387.50],"budget_q_2025":[114365377.15,114365377.15,139779905.40,139779905.40],"actual_q_2025":[108120406.44,118993591.75,99818377.38,100595524.04],"budget_q_2026":[158092162.50,158092162.50,158092162.50,158092162.50],"actual_q_2026":[106832190.89,0,0,0]},"B2B_GM":{"ly_2024":[13216060.53,11744817.81,12605315.99,15565926.55,12268737.25,10863457.73,11375678.09,13373019.11,12621002.93,12280865.59,11466953.40,12418005.58],"budget_2025":[13518574.28,13518574.28,13518574.28,13518574.28,13518574.28,13518574.28,16568998.20,16568998.20,16568998.20,16568998.20,16568998.20,16568998.20],"actual_2025":[14034673.26,12570920.73,17171241.13,12637962.66,14384768.76,17562542.45,12013997.59,11632627.68,13651585.17,12368117.32,13703665.37,21876468.22],"budget_2026":[16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80,16578801.80],"budget_q_2025":[40555722.85,40555722.85,49706994.60,49706994.60],"actual_q_2025":[43776835.11,44585273.87,37298210.44,47948250.91],"budget_q_2026":[49736405.40,49736405.40,49736405.40,49736405.40],"actual_q_2026":[33232013.52,0,0,0]},"AFS_GSV":{"ly_2024":[2585263.16,3344862.98,3876373.61,4895756.74,4091272.43,3920948.99,4572294.99,5750862.81,2509916.44,5508107.13,3007781.16,6152803.44],"budget_2025":[3500000,4200000,4770000,6020000,6750000,7470000,7770000,7620000,7520000,7000000,6390000,5990000],"actual_2025":[3996538.87,3048121.83,3563396.19,3419397.63,4578523.04,5852364.91,5861045.55,5468621.89,4991401.65,6333426.51,5533491.29,8014318.66],"budget_2026":[6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67],"budget_q_2025":[12470000,20240000,22910000,19380000],"actual_q_2025":[10608056.89,13850285.58,16321069.09,19881236.46],"budget_q_2026":[20000000,20000000,20000000,20000000],"actual_q_2026":[17190459.13,0,0,0]},"AFS_NSV":{"ly_2024":[2585263.16,3344862.98,3876373.61,4895756.74,4091272.43,3920948.99,4572294.99,5750862.81,2509916.44,5508107.13,3007781.16,6152803.44],"budget_2025":[3500000,4200000,4770000,6020000,6750000,7470000,7770000,7620000,7520000,7000000,6390000,5990000],"actual_2025":[3996538.87,3048121.83,3563396.19,3419397.63,4578523.04,5852364.91,5861045.55,5468621.89,4991401.65,6305301.51,5561616.29,8014318.66],"budget_2026":[6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67],"budget_q_2025":[12470000,20240000,22910000,19380000],"actual_q_2025":[10608056.89,13850285.58,16321069.09,19881236.46],"budget_q_2026":[20000000,20000000,20000000,20000000],"actual_q_2026":[17019749.37,0,0,0]},"AFS_COGS":{"ly_2024":[1634956.86,1499111.01,1509737.93,1787488.10,1249400.73,2181253.88,1963634.99,3653633.73,1456536.13,3472634.26,1281001.86,4126607.69],"budget_2025":[1963600.71,2379339.81,2576372.34,3326089.65,3765564.28,4098278.01,4216701.88,4071176.51,4198676.51,4123462.78,3947296.22,3781441.30],"actual_2025":[1146608.13,1100059.45,1141816.83,1585558.04,1957900.00,1682487.90,2255323.31,2666369.47,2314472.06,3736037.17,10194384.17,4768595.95],"budget_2026":[3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04],"budget_q_2025":[6919312.86,11189931.93,12486554.91,11852200.31],"actual_q_2025":[3388484.41,5225945.94,7236164.84,18699017.29],"budget_q_2026":[11535801.11,11535801.11,11535801.11,11535801.11],"actual_q_2026":[9805509.14,0,0,0]},"AFS_GM":{"ly_2024":[950306.30,1845751.97,2366635.68,3108268.64,2841871.70,1739695.11,2608660.00,2097229.08,1053380.31,2035472.87,1726779.30,2026195.75],"budget_2025":[1536399.29,1820660.19,2193627.66,2693910.35,2984435.72,3371721.99,3553298.12,3548823.49,3321323.49,2876537.22,2442703.78,2208558.70],"actual_2025":[2849930.74,1948062.38,2421579.36,1833839.59,2620623.04,4169877.01,3609380.03,2808372.42,2682679.59,2569264.34,-4632767.88,3245722.71],"budget_2026":[2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63],"budget_q_2025":[5550687.14,9050068.07,10423445.09,7527799.69],"actual_q_2025":[7219572.48,8624339.64,9100432.04,1182219.17],"budget_q_2026":[8464198.89,8464198.89,8464198.89,8464198.89],"actual_q_2026":[7214240.23,0,0,0]},"HVAC_GM_PCT":{"ly_2024":[19.6,16.9,27.2,24.8,16.8,20.8,19.4,22.0,19.0,21.0,21.8,23.5],"budget_2025":[22.0,23.0,21.9,22.0,20.9,21.9,24.2,22.9,22.7,22.0,23.6,24.0],"actual_2025":[26.4,21.8,22.6,17.4,22.0,25.4,22.2,16.0,22.2,21.8,14.4,41.4],"budget_2026":[20.5,17.9,21.0,20.7,18.5,19.9,20.9,20.2,18.9,19.8,22.0,23.2]},"B2C_GM_PCT":{"ly_2024":[5.8,5.1,28.4,6.2,0.7,10.2,-10.6,10.4,10.9,12.7,7.5,5.3],"budget_2025":[11.7,14.7,13.2,13.5,13.3,12.8,13.3,13.4,13.4,13.4,13.3,13.1],"actual_2025":[14.2,13.6,0.1,-3.2,6.4,3.1,-1.2,-3.7,8.1,5.3,-18.1,46.7],"budget_2026":[8.2,6.4,13.3,9.8,8.1,9.6,10.0,9.8,8.1,8.5,12.1,14.5]},"B2B_GM_PCT":{"ly_2024":[26.6,21.2,23.9,28.3,25.7,26.9,28.7,31.3,28.2,26.7,26.3,30.2],"budget_2025":[26.5,26.5,26.5,26.5,26.5,26.5,26.5,26.5,26.5,26.5,26.5,26.5],"actual_2025":[28.0,24.7,34.2,25.0,25.3,30.8,26.7,24.6,28.1,25.6,28.3,40.9],"budget_2026":[23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7,23.7]},"AFS_GM_PCT":{"ly_2024":[36.8,55.2,61.1,63.5,69.5,44.4,57.1,36.5,42.0,37.0,57.4,32.9],"budget_2025":[43.9,43.3,46.0,44.7,44.2,45.1,45.7,46.6,44.2,41.1,38.2,36.9],"actual_2025":[71.3,63.9,68.0,53.6,57.2,71.3,61.5,51.2,53.6,40.7,-83.3,40.5],"budget_2026":[42.3,42.3,42.3,42.3,42.3,42.3,42.3,42.3,42.3,42.3,42.3,42.3]}},"months":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"closing_month":12,"channels":["HVAC","B2C","B2B","AFS"]};
+// ── DATA (embedded) ──────────────────────────────────────────────────────────
+const D={"HVAC_GSV":{"ly_2024":[93828198.64,104097597.86,100739890.04,89925238.79,112106703.32,88415072.82,72271229.92,103694456.56,122092335.72,103975405.28,75987884.07,72170871.93],"budget_2025":[91501654.4,93783368.08,104319590.23,109629845.31,129729378.41,115113341.62,106599777.21,123891370.42,123803263.73,128611255.33,102325710.6,95631165.03],"actual_2025":[80595213.77,94796896.11,99625026.5,89677083.29,89147615.07,96629201.17,75135120.41,92150866.01,91713066.61,79617591.97,61848720.8,61443049.82],"budget_2026":[115014552.4,140915246.53,127966340.84,118284193.43,141376968.14,127650539.06,115831630.48,124300791.12,135927720.65,125211343.42,108047106.88,99473567.05],"actual_2026":[91350643.04,86652764.52,81260491.3,0,0,0,0,0,0,0,0,0]},"HVAC_NSV":{"ly_2024":[81006052.07,91540338.51,90347022.0,79919610.46,90183503.99,77126281.81,63127479.02,90347647.21,105443378.58,94563837.69,68588349.32,66329038.3],"budget_2025":[85680034.45,87946852.44,96417137.0,101068014.78,117338562.65,105068397.26,99850837.45,114334040.66,114245393.17,118150763.14,96161677.83,90542742.61],"actual_2025":[76271718.65,88582013.12,85587820.75,78433741.96,82794542.18,88667217.99,67533785.45,79341554.4,83965673.01,73230091.44,59013116.79,63900893.26],"budget_2026":[105033494.66,124340056.22,117598385.88,108087555.39,125662309.23,115641429.09,106099498.01,113071808.86,121228113.82,113190702.58,100595512.02,94053305.89],"actual_2026":[82722670.26,75012383.07,73097821.09,0,0,0,0,0,0,0,0,0]},"HVAC_COGS":{"ly_2024":[65091321.54,76112389.56,65791757.73,60092863.02,75039233.44,61064333.04,50886790.88,70489267.51,85392841.49,74680144.42,53607342.9,50708968.77],"budget_2025":[66861234.95,67697524.26,75256959.65,78829190.97,92819712.35,82102633.16,75696658.25,88184699.95,88349767.94,92113041.8,73436375.08,68771506.3],"actual_2025":[56137690.72,69267421.43,66233311.24,64814470.99,64596589.76,66107252.29,52511925.92,66617434.21,65350419.89,57299959.78,50498835.58,37420300.65],"budget_2026":[83477803.95,102046386.17,92859828.88,85747426.85,102430555.06,92655930.09,83912466.51,90248399.75,98369712.66,90835388.14,78429512.03,72232407.87],"actual_2026":[65924518.35,62301598.09,59641772.38,0,0,0,0,0,0,0,0,0]},"HVAC_GM":{"ly_2024":[18493984.03,19304368.95,27913316.77,22410727.44,19985782.05,17540381.27,12549558.14,20388461.7,22656297.09,20834858.27,16221145.89,16350093.98],"budget_2025":[20200136.61,21800264.98,22745966.29,24004281.31,26633441.42,24638980.37,25093934.16,27836449.93,27621123.33,27950009.95,23691572.75,22547049.26],"actual_2025":[20117774.77,20637881.51,22336031.68,16198880.41,20600472.44,25782494.86,17852715.95,17122913.34,24246121.8,16657975.39,8571553.21,28848607.12],"budget_2026":[23618057.71,26000296.24,27521952.73,24736642.34,26977137.79,25790775.47,24478921.35,25440358.43,26377694.18,25047756.11,23866570.63,23026405.2],"actual_2026":[20127943.92,16607739.75,16172518.52,0,0,0,0,0,0,0,0,0]},"B2C_GSV":{"ly_2024":[40949926.54,44191331.06,44173498.01,30285383.99,60765433.0,43070103.59,27008913.96,54850348.72,74486514.48,51423608.64,28431778.19,25284529.22],"budget_2025":[35501654.4,37083368.08,47049590.23,51109845.31,70479378.41,55143341.62,34663110.54,52104703.76,52116597.06,57444588.67,31769043.93,25474498.36],"actual_2025":[25544508.11,39811953.74,46330081.94,35630183.33,28135473.16,33078806.17,25011509.51,40994153.57,38237462.36,24219782.66,6921348.32,5005274.64],"budget_2026":[37514552.4,63415246.53,50466340.84,40784193.43,63876968.14,50150539.06,38331630.48,46800791.12,58427720.65,47711343.42,30547106.88,21973567.05],"actual_2026":[28696452.56,40269004.63,28800000.0,0,0,0,0,0,0,0,0,0]},"B2C_NSV":{"ly_2024":[28402064.78,31883410.17,34126469.72,20537478.19,39277026.46,32046375.11,18257794.46,41805381.04,58147932.39,42448926.07,21352767.35,18334555.0],"budget_2025":[30331334.45,31898152.44,39798437.0,43199314.78,58739862.65,45749697.26,28710204.12,43343407.32,43354759.83,47780129.81,26401044.5,21182109.27],"actual_2025":[21454366.99,33786419.99,32555954.42,24649765.43,22341866.01,25745447.48,18202404.0,29122250.8,31342281.39,18632210.97,4216033.5,6176553.29],"budget_2026":[29329299.28,48635860.84,41894190.5,32383360.01,49958113.85,39937233.72,30395302.64,37367613.48,45523918.44,37486507.2,24891316.64,18349110.51],"actual_2026":[22567742.95,30572480.88,22436753.03,0,0,0,0,0,0,0,0,0]},"B2C_COGS":{"ly_2024":[26761200.08,30246031.01,24433957.12,19254025.94,38982964.85,28787579.18,20201444.41,37436802.54,51784278.54,37051921.26,19748243.22,17358686.8],"budget_2025":[26775841.86,27196392.07,34558794.92,37381308.94,50932355.69,39882562.77,24886654.56,37520221.64,37557789.63,41396277.22,22895777.06,18396763.19],"actual_2025":[18412943.06,29199144.75,32517444.73,25446138.05,20913902.73,24938734.57,18414397.4,30207684.04,28803156.36,17651794.3,4980982.77,3291777.61],"budget_2026":[26935149.42,45503731.63,36317174.34,29204772.32,45887900.52,36113275.55,27369811.97,33705745.21,41827058.12,34292733.6,21886857.49,15689753.33],"actual_2026":[20628587.86,29678646.73,20922954.21,0,0,0,0,0,0,0,0,0]},"B2C_GM":{"ly_2024":[4327617.2,5713799.16,12941365.1,3736532.25,4875173.11,4937228.43,-1434779.95,4918213.5,8981913.85,6518519.81,3027413.19,1905892.65],"budget_2025":[5145163.03,6461030.5,7033764.35,7791796.68,10130431.41,7748684.1,4971637.84,7718628.24,7730801.65,8504474.53,4679870.77,3769492.37],"actual_2025":[3233170.78,6118898.4,2743211.19,1727078.16,3595080.64,4050075.41,2229338.33,2681913.24,7911857.04,1720593.73,-499344.27,3726416.19],"budget_2026":[4217856.28,6600094.81,8121751.29,5336440.91,7576936.36,6390574.04,5078719.92,6040157.0,6977492.75,5647554.68,4466369.2,3626203.77],"actual_2026":[4011783.65,4571768.62,3878396.16,0,0,0,0,0,0,0,0,0]},"B2B_GSV":{"ly_2024":[50293008.94,56561403.82,52690018.42,54744098.06,47249997.89,41424020.24,40690020.97,43093245.03,45095904.8,47043689.51,44548324.72,40733539.27],"budget_2025":[52500000.0,52500000.0,52500000.0,52500000.0,52500000.0,52500000.0,64166666.67,64166666.67,64166666.67,64166666.67,64166666.67,64166666.67],"actual_2025":[51054166.79,51936820.54,49731548.37,50627502.33,56433618.87,57698030.09,44262565.35,45688090.55,48484202.6,49064382.8,49393881.19,48423456.52],"budget_2026":[70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33,70833333.33],"actual_2026":[54118702.69,42828788.55,47360491.3,0,0,0,0,0,0,0,0,0]},"B2B_NSV":{"ly_2024":[50018724.13,56312065.35,52344178.67,54486375.53,46815205.11,41158957.71,40297389.57,42791403.35,44785529.75,46606804.49,44227800.8,41841679.86],"budget_2025":[51848700.0,51848700.0,51848700.0,51848700.0,51848700.0,51848700.0,63370633.33,63370633.33,63370633.33,63370633.33,63370633.33,63370633.33],"actual_2025":[50820812.79,51747471.29,49468470.14,50364578.89,55874153.13,57069405.6,43470335.91,44750681.71,47631989.97,48292578.96,49235467.01,49710021.31],"budget_2026":[69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71,69037528.71],"actual_2026":[51790149.28,40884930.86,45561068.06,0,0,0,0,0,0,0,0,0]},"B2B_COGS":{"ly_2024":[36695164.6,44367247.54,39848062.68,39051348.98,34806867.86,30095499.98,28721711.48,29398831.24,32152026.82,34155588.9,32578097.82,29223674.28],"budget_2025":[38121792.38,38121792.38,38121792.38,38121792.38,38121792.38,38121792.38,46593301.8,46593301.8,46593301.8,46593301.8,46593301.8,46593301.8],"actual_2025":[36578139.53,38968217.23,32574049.68,37782774.9,41724787.03,39486029.82,31842205.21,33743380.7,34232791.47,35912128.31,35323468.64,29359927.09],"budget_2026":[52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5,52697387.5],"actual_2026":[40458868.18,30616704.53,35756618.17,0,0,0,0,0,0,0,0,0]},"B2B_GM":{"ly_2024":[13216060.53,11744817.81,12605315.99,15565926.55,12268737.25,10863457.73,11375678.09,13373019.11,12621002.93,12280865.59,11466953.4,12418005.58],"budget_2025":[13518574.28,13518574.28,13518574.28,13518574.28,13518574.28,13518574.28,16568998.2,16568998.2,16568998.2,16568998.2,16568998.2,16568998.2],"actual_2025":[14034673.26,12570920.73,17171241.13,12637962.66,14384768.76,17562542.45,12013997.59,11632627.68,13651585.17,12368117.32,13703665.37,21876468.22],"budget_2026":[16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8,16578801.8],"actual_2026":[12588444.54,10487246.62,10156322.36,0,0,0,0,0,0,0,0,0]},"AFS_GSV":{"ly_2024":[2585263.16,3344862.98,3876373.61,4895756.74,4091272.43,3920948.99,4572294.99,5750862.81,2509916.44,5508107.13,3007781.16,6152803.44],"budget_2025":[3500000.0,4200000.0,4770000.0,6020000.0,6750000.0,7470000.0,7770000.0,7620000.0,7520000.0,7000000.0,6390000.0,5990000.0],"actual_2025":[3996538.87,3048121.83,3563396.19,3419397.63,4578523.04,5852364.91,5861045.55,5468621.89,4991401.65,6333426.51,5533491.29,8014318.66],"budget_2026":[6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67],"actual_2026":[8535487.79,3554971.34,5100000.0,0,0,0,0,0,0,0,0,0]},"AFS_NSV":{"ly_2024":[2585263.16,3344862.98,3876373.61,4895756.74,4091272.43,3920948.99,4572294.99,5750862.81,2509916.44,5508107.13,3007781.16,6152803.44],"budget_2025":[3500000.0,4200000.0,4770000.0,6020000.0,6750000.0,7470000.0,7770000.0,7620000.0,7520000.0,7000000.0,6390000.0,5990000.0],"actual_2025":[3996538.87,3048121.83,3563396.19,3419397.63,4578523.04,5852364.91,5861045.55,5468621.89,4991401.65,6305301.51,5561616.29,8014318.66],"budget_2026":[6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67,6666666.67],"actual_2026":[8364778.03,3554971.34,5100000.0,0,0,0,0,0,0,0,0,0]},"AFS_COGS":{"ly_2024":[1634956.86,1499111.01,1509737.93,1787488.1,1249400.73,2181253.88,1963634.99,3653633.73,1456536.13,3472634.26,1281001.86,4126607.69],"budget_2025":[1963600.71,2379339.81,2576372.34,3326089.65,3765564.28,4098278.01,4216701.88,4071176.51,4198676.51,4123462.78,3947296.22,3781441.3],"actual_2025":[1146608.13,1100059.45,1141816.83,1585558.04,1957900.0,1682487.9,2255323.31,2666369.47,2314472.06,3736037.17,10194384.17,4768595.95],"budget_2026":[3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04,3845267.04],"actual_2026":[4837062.31,2006246.83,2962200.0,0,0,0,0,0,0,0,0,0]},"AFS_GM":{"ly_2024":[950306.3,1845751.97,2366635.68,3108268.64,2841871.7,1739695.11,2608660.0,2097229.08,1053380.31,2035472.87,1726779.3,2026195.75],"budget_2025":[1536399.29,1820660.19,2193627.66,2693910.35,2984435.72,3371721.99,3553298.12,3548823.49,3321323.49,2876537.22,2442703.78,2208558.7],"actual_2025":[2849930.74,1948062.38,2421579.36,1833839.59,2620623.04,4169877.01,3609380.03,2808372.42,2682679.59,2569264.34,-4632767.88,3245722.71],"budget_2026":[2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63,2821399.63],"actual_2026":[3527715.72,1548724.51,2137800.0,0,0,0,0,0,0,0,0,0]},"HVAC_SD_PCT":{"ly_2024":[13.67,12.06,10.32,11.13,19.56,12.77,12.65,12.87,13.64,9.05,9.74,8.09],"budget_2025":[6.36,6.22,7.58,7.81,9.55,8.73,6.33,7.71,7.72,8.13,6.02,5.32],"actual_2025":[5.36,6.56,14.09,12.54,7.13,8.24,10.12,13.9,8.45,8.02,4.58,-4.0],"budget_2026":[8.68,11.76,8.1,8.62,11.12,9.41,8.4,9.03,10.81,9.6,6.9,5.45],"actual_2026":[9.44,13.43,10.05,0,0,0,0,0,0,0,0,0]},"HVAC_COGS_PCT":{"ly_2024":[69.37,73.12,65.31,66.83,66.94,69.07,70.41,67.98,69.94,71.82,70.55,70.26],"budget_2025":[73.07,72.19,72.14,71.9,71.55,71.32,71.01,71.18,71.36,71.62,71.77,71.91],"actual_2025":[69.65,73.07,66.48,72.28,72.46,68.41,69.89,72.29,71.26,71.97,81.65,60.9],"budget_2026":[72.58,72.42,72.57,72.49,72.45,72.59,72.44,72.6,72.37,72.55,72.59,72.61],"actual_2026":[72.17,71.9,73.4,0,0,0,0,0,0,0,0,0]},"HVAC_GM_PCT":{"ly_2024":[22.83,21.09,30.9,28.04,22.16,22.74,19.88,22.57,21.49,22.03,23.65,24.65],"budget_2025":[23.58,24.79,23.59,23.75,22.7,23.45,25.13,24.35,24.18,23.66,24.64,24.9],"actual_2025":[26.38,23.3,26.1,20.65,24.88,29.08,26.44,21.58,28.88,22.75,14.52,45.15],"budget_2026":[22.49,20.91,23.4,22.89,21.47,22.3,23.07,22.5,21.76,22.13,23.73,24.48],"actual_2026":[24.33,22.14,22.12,0,0,0,0,0,0,0,0,0]},"B2C_SD_PCT":{"ly_2024":[30.64,27.85,22.74,32.19,35.36,25.59,32.4,23.78,21.93,17.45,24.9,27.49],"budget_2025":[14.56,13.98,15.41,15.48,16.66,17.03,17.17,16.81,16.81,16.82,16.9,16.85],"actual_2025":[16.01,15.13,29.73,30.82,20.59,22.17,27.22,28.96,18.03,23.07,39.09,-23.4],"budget_2026":[21.82,23.31,16.99,20.6,21.79,20.37,20.7,20.16,22.09,21.43,18.51,16.49],"actual_2026":[21.36,24.08,22.09,0,0,0,0,0,0,0,0,0]},"B2C_COGS_PCT":{"ly_2024":[65.35,68.44,55.31,63.58,64.15,66.84,74.8,68.25,69.52,72.05,69.46,68.65],"budget_2025":[75.42,73.34,73.45,73.14,72.27,72.33,71.8,72.01,72.06,72.06,72.07,72.22],"actual_2025":[72.08,73.34,70.19,71.42,74.33,75.39,73.62,73.69,75.33,72.88,71.97,65.77],"budget_2026":[71.8,71.76,71.96,71.61,71.84,72.01,71.4,72.02,71.59,71.88,71.65,71.4],"actual_2026":[71.89,73.7,72.65,0,0,0,0,0,0,0,0,0]},"B2C_GM_PCT":{"ly_2024":[15.24,17.92,37.92,18.19,12.41,15.41,-7.86,11.76,15.45,15.36,14.18,10.4],"budget_2025":[16.96,20.26,17.67,18.04,17.25,16.94,17.32,17.81,17.83,17.8,17.73,17.8],"actual_2025":[15.07,18.11,8.43,7.01,16.09,15.73,12.25,9.21,25.24,9.23,-11.84,60.33],"budget_2026":[14.38,13.57,19.39,16.48,15.17,16.0,16.71,16.16,15.33,15.07,17.94,19.76],"actual_2026":[17.78,14.95,17.29,0,0,0,0,0,0,0,0,0]},"B2B_SD_PCT":{"ly_2024":[0.55,0.44,0.66,0.47,0.92,0.64,0.96,0.7,0.69,0.93,0.72,-2.72],"budget_2025":[1.24,1.24,1.24,1.24,1.24,1.24,1.24,1.24,1.24,1.24,1.24,1.24],"actual_2025":[0.46,0.36,0.53,0.52,0.99,1.09,1.79,2.05,1.76,1.57,0.32,-2.66],"budget_2026":[2.54,2.54,2.54,2.54,2.54,2.54,2.54,2.54,2.54,2.54,2.54,2.54],"actual_2026":[4.3,4.54,3.8,0,0,0,0,0,0,0,0,0]},"B2B_COGS_PCT":{"ly_2024":[72.96,78.44,75.63,71.33,73.67,72.65,70.59,68.22,71.3,72.6,73.13,71.74],"budget_2025":[72.61,72.61,72.61,72.61,72.61,72.61,72.61,72.61,72.61,72.61,72.61,72.61],"actual_2025":[71.65,75.03,65.5,74.63,73.94,68.44,71.94,73.86,70.61,73.19,71.51,60.63],"budget_2026":[74.4,74.4,74.4,74.4,74.4,74.4,74.4,74.4,74.4,74.4,74.4,74.4],"actual_2026":[74.76,71.49,75.5,0,0,0,0,0,0,0,0,0]},"B2B_GM_PCT":{"ly_2024":[26.42,20.86,24.08,28.57,26.21,26.39,28.23,31.25,28.18,26.35,25.93,29.68],"budget_2025":[26.07,26.07,26.07,26.07,26.07,26.07,26.15,26.15,26.15,26.15,26.15,26.15],"actual_2025":[27.62,24.29,34.71,25.09,25.74,30.77,27.64,25.99,28.66,25.61,27.83,44.01],"budget_2026":[24.01,24.01,24.01,24.01,24.01,24.01,24.01,24.01,24.01,24.01,24.01,24.01],"actual_2026":[24.31,25.65,22.29,0,0,0,0,0,0,0,0,0]},"AFS_SD_PCT":{"ly_2024":[0,0,0,0,0,0,0,0,0,0,0,0],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[0,0,0,0,0,0,0,0,0,0.44,-0.51,0],"budget_2026":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2026":[2,0,0,0,0,0,0,0,0,0,0,0]},"AFS_COGS_PCT":{"ly_2024":[63.24,44.82,38.95,36.51,30.54,55.63,42.95,63.53,58.03,63.05,42.59,67.07],"budget_2025":[56.1,56.65,54.01,55.25,55.79,54.86,54.27,53.43,55.83,58.91,61.77,63.13],"actual_2025":[28.69,36.09,32.04,46.37,42.76,28.75,38.48,48.76,46.37,58.99,184.23,59.5],"budget_2026":[57.68,57.68,57.68,57.68,57.68,57.68,57.68,57.68,57.68,57.68,57.68,57.68],"actual_2026":[56.67,56.43,58.08,0,0,0,0,0,0,0,0,0]},"AFS_GM_PCT":{"ly_2024":[36.76,55.18,61.05,63.49,69.46,44.37,57.05,36.47,41.97,36.95,57.41,32.93],"budget_2025":[43.9,43.35,45.99,44.75,44.21,45.14,45.73,46.57,44.17,41.09,38.23,36.87],"actual_2025":[71.31,63.91,67.96,53.63,57.24,71.25,61.58,51.35,53.75,40.75,-83.3,40.5],"budget_2026":[42.32,42.32,42.32,42.32,42.32,42.32,42.32,42.32,42.32,42.32,42.32,42.32],"actual_2026":[42.17,43.57,41.92,0,0,0,0,0,0,0,0,0]},"B2C_Window_GSV":{"ly_2024":[1949627.92,1342639.61,414008.84,32656.71,4957.31,-433.68,0,13805012.23,31052010.95,22347127.3,1168821.78,-96647.19],"budget_2025":[4098525.65,5952644.61,6215445.08,5809505.48,3421959.65,1725243.3,0,0,0,0,0,0],"actual_2025":[5242704.66,20835136.56,90451.45,-35806.81,-7756.85,-2896.24,27655.88,-38522.63,-343983.92,-94258.64,-25662.14,9946.8],"budget_2026":[753768.84,1809243.07,1205832.31,2447275.75,3793574.17,3195109.41,1507537.69,3618486.13,2411664.62,2128754.01,1277054.56,851699.44],"actual_2026":[161829.4,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Window_NSV":{"ly_2024":[1832276.8,1273056.71,381691.4,30829.74,4895.5,-394.53,-9.85,12581295.14,28234349.81,20335868.01,1058143.98,-87027.31],"budget_2025":[3743599.37,5486735.93,5677172.82,5306530.2,3125861.67,1575231.14,0,0,0,0,0,0],"actual_2025":[4742842.71,18784495.45,82860.67,-32289.3,-7334.26,-2905.33,25498.73,-35154.76,-84342.59,-87735.94,-23873.47,10046.32],"budget_2026":[704773.87,1691642.27,1127453.21,2288202.83,3546991.85,2987427.29,1409547.74,3383284.53,2254906.42,1990385.0,1194046.02,796338.98],"actual_2026":[152969.73,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Window_COGS":{"ly_2024":[1694877.81,1191854.36,366022.91,33021.17,6390.5,-137.7,0,10674773.81,23666603.07,17255615.5,901738.88,-74376.45],"budget_2025":[3219116.94,4676620.34,4881733.97,4563382.59,2688531.3,1352993.38,0,0,0,0,0,0],"actual_2025":[4010832.99,15980880.76,70978.0,-27489.62,-5643.94,-2684.42,21717.29,-29527.32,-272759.84,-74096.62,-19983.74,9479.48],"budget_2026":[593216.08,1423874.29,948990.03,1926006.01,2985542.87,2514551.1,1186432.16,2847748.59,1897980.06,1675329.4,1005041.94,670287.46],"actual_2026":[145526.4,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Window_GM":{"ly_2024":[137398.99,81202.35,15668.49,-2191.43,-1495.0,-256.83,-9.85,1906521.33,4567746.74,3080252.51,156405.1,-12650.86],"budget_2025":[524482.43,810115.59,795438.85,743147.61,437330.37,222237.75,0,0,0,0,0,0],"actual_2025":[732009.72,2803614.69,11882.67,-4799.68,-1690.32,-220.91,3781.44,-5627.44,188417.25,-13639.32,-3889.73,566.84],"budget_2026":[111557.79,267767.97,178463.18,362196.81,561448.98,472876.19,223115.58,535535.95,356926.36,315055.59,189004.08,126051.52],"actual_2026":[7443.33,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_On__Off__GSV":{"ly_2024":[5002484.78,5732637.75,6976066.64,9148501.12,9439037.63,10294841.6,865534.98,11958887.19,8295066.49,5405055.57,5560225.79,2588284.47],"budget_2025":[1726362.78,0,3106620.78,3451294.17,16907978.35,13939644.52,9779523.65,11196147.91,10709104.7,11917818.78,6727583.74,4735641.91],"actual_2025":[739998.7,3825113.0,7325791.01,4406617.78,2219583.18,6446797.32,8144926.89,12034936.64,7004096.27,5695869.04,2205819.92,567245.68],"budget_2026":[11084799.69,15975739.47,15405533.72,6849596.51,12537398.82,11197415.32,6942254.95,9187440.07,11425497.62,11666409.55,6999275.52,4661431.97],"actual_2026":[6421564.94,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_On__Off__NSV":{"ly_2024":[2976645.42,3280510.85,3704872.81,5117181.55,5418012.87,5916588.6,656191.97,6708997.92,4144757.1,3311744.01,2980676.66,1613716.35],"budget_2025":[1434987.6,0,2468979.04,2742911.22,13497492.25,11112908.51,7801609.39,8938791.29,8553765.85,9507311.4,5366968.67,3776126.37],"actual_2025":[641713.95,3064732.23,5771305.59,3588332.97,1832873.34,5537865.42,7193643.57,10274506.81,6357418.74,4792736.49,1799238.11,422507.04],"budget_2026":[9167129.34,13211936.54,12740376.39,5664616.32,10368428.83,9260262.47,5741244.84,7598012.94,9448886.53,9648120.69,5788400.86,3855004.24],"actual_2026":[5089721.1,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_On__Off__COGS":{"ly_2024":[2483247.25,2871025.63,3514000.49,4520471.69,4698100.74,5063461.24,544610.54,5836757.83,4020314.22,2726830.17,2705165.4,1355318.15],"budget_2025":[1138378.99,0,2048520.47,2275785.8,11190427.61,9181832.28,6450970.44,7425107.12,7116002.61,7892565.05,4458545.17,3134466.13],"actual_2025":[622845.17,2530902.85,4911891.81,3059894.86,1489724.43,4481713.53,6140974.36,9172014.24,5439603.53,4312230.21,1678732.2,463300.05],"budget_2026":[8069734.17,11630338.33,11215228.55,4986506.26,9127226.34,8151718.35,5053961.6,6688456.37,8317762.27,8493146.15,5095472.58,3393522.47],"actual_2026":[4853797.58,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_On__Off__GM":{"ly_2024":[655658.17,712155.22,475972.32,1217129.86,1207149.63,1116217.36,111581.43,872240.09,124442.88,703898.84,275511.26,258398.2],"budget_2025":[296608.61,0,420458.58,467125.42,2307064.64,1931076.23,1350638.96,1513684.16,1437763.24,1614746.36,908423.5,641660.24],"actual_2025":[18868.78,533829.38,859413.78,528438.11,343148.91,1056151.89,1052669.21,1102492.57,917815.21,480506.28,188755.91,114206.99],"budget_2026":[1500881.88,2163115.12,2085909.27,927435.37,1697563.8,1516130.03,939981.32,1243979.39,1547012.38,1579631.85,947701.91,631157.89],"actual_2026":[785350.19,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_-_Inverter_GSV":{"ly_2024":[26387277.63,22898518.17,23822558.63,13325481.08,37874611.9,13258539.93,15393844.87,17297628.5,24489967.81,11669924.58,11861657.33,12359445.57],"budget_2025":[22759859.74,2415349.57,22706578.96,24980317.83,29884402.17,24273880.43,14750213.48,23984250.26,24483186.78,26848422.78,14908086.78,12429032.87],"actual_2025":[15416049.42,10051815.97,29002456.31,19388440.17,6844605.2,11317282.05,11424962.46,21507723.88,22521712.06,7599365.46,2589195.76,549267.13],"budget_2026":[14047513.56,29189638.56,19493543.34,19645572.71,31030883.12,21571278.03,18669206.33,20503694.03,29486940.43,20328015.65,12189376.84,8131881.95],"actual_2026":[11608198.71,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_-_Inverter_NSV":{"ly_2024":[16356162.8,13801138.62,17881546.83,8043977.69,21564975.34,7902911.64,7563439.55,11503048.6,15917938.46,7325414.78,8109741.44,7350223.34],"budget_2025":[18829413.84,1956433.15,17853944.74,19650385.62,23495934.78,19090606.96,11597550.05,18852885.21,19249263.16,21108056.68,11723031.16,9773306.95],"actual_2025":[12209373.06,7183926.7,21102638.57,14053522.9,3919532.62,7622907.3,7328154.07,13384524.87,16218815.06,4662894.56,1794026.77,-973492.78],"budget_2026":[9524214.19,19790574.94,13216622.39,13319698.3,21038938.76,14625326.51,12657721.89,13901504.55,19992145.61,13782394.61,8264397.5,5513415.96],"actual_2026":[7974016.64,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_-_Inverter_COGS":{"ly_2024":[15986674.09,14278872.99,15441120.82,8090817.03,22938355.39,8466027.82,10697523.19,10643701.67,15232421.46,7250561.95,8066429.05,7784372.17],"budget_2025":[16424661.1,1592693.61,15924705.72,17456280.62,20948216.08,17110651.34,10322435.59,16775903.64,17132424.66,18788816.2,10434122.85,8698919.57],"actual_2025":[10509970.76,6606499.21,19495571.03,13461711.89,4694307.97,7711463.26,7725643.79,14573378.5,16190333.46,5593603.17,1774527.64,91326.97],"budget_2026":[9670308.33,20094147.18,13419355.24,13524012.25,21361659.94,14849667.8,12851881.64,14114742.97,20298809.79,13993805.97,8391167.02,5597987.53],"actual_2026":[7777022.62,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Split_-_Inverter_GM":{"ly_2024":[2940701.21,3121215.63,5217618.51,1860820.66,2475543.95,531126.32,-2548763.64,1475081.93,3280627.0,1129382.83,1443140.14,466675.62],"budget_2025":[4176039.72,363739.54,3646609.25,4076645.06,4806840.05,3825221.93,2388318.3,3886147.65,3964452.92,4345485.37,2414156.85,2012506.16],"actual_2025":[2166399.14,2116327.49,4085169.04,2991811.01,944738.9,1983344.04,1990126.28,2447046.37,2029821.6,-271708.61,336699.13,-564099.75],"budget_2026":[1091115.89,2267253.79,1514126.66,1525935.28,2410269.22,1675511.05,1450097.74,1592588.34,2290346.19,1578942.83,946788.39,631629.62],"actual_2026":[1459584.02,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Free_Standing_GSV":{"ly_2024":[4487398.38,9097593.21,9527541.46,4166894.21,10527849.85,14456866.66,7463109.02,7035076.65,6351012.88,5052290.31,6313029.77,6316556.23],"budget_2025":[5306193.91,16701338.35,9547191.3,10612387.83,12736086.09,9547191.3,6371390.43,10612387.83,10612387.83,11677584.35,6371390.43,5306193.91],"actual_2025":[1603512.45,3265704.07,7582690.36,8782141.07,13115768.64,12815691.78,3200910.75,4535939.01,3819947.31,4024029.98,235968.37,761892.77],"budget_2026":[6803465.64,11615620.76,9536426.78,7016743.78,11690107.34,9361731.62,6387626.84,8666166.21,10278613.29,8763159.54,5256395.28,3503549.02],"actual_2026":[2308484.88,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Free_Standing_NSV":{"ly_2024":[4275607.0,8718817.56,9027629.01,3884909.04,9670507.28,13400141.49,6873408.01,6514360.36,5722420.59,4649900.05,5805491.56,5507977.65],"budget_2025":[4809264.07,13380184.06,8653011.52,9618528.13,11543358.93,8653011.52,5774780.67,9618528.13,9618528.13,10584044.74,5774780.67,4809264.07],"actual_2025":[1405928.36,2982261.65,5995488.77,5842745.1,12241368.02,11286355.99,2617878.25,3825470.83,3916854.25,3536315.62,201721.27,711283.23],"budget_2026":[5667286.87,9675812.09,7943843.51,5844947.57,9737859.42,7798322.44,5320893.16,7218916.46,8562084.87,7299711.9,4378577.26,2918456.33],"actual_2026":[2006403.03,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Free_Standing_COGS":{"ly_2024":[3789444.99,7665958.64,7916331.37,3335900.85,8299577.05,11401310.36,5800865.12,5543835.31,5034463.75,4008106.75,4943965.84,4975002.82],"budget_2025":[4225083.53,11672759.79,7602237.22,8450167.05,10141096.28,7602237.22,5073013.35,8450167.05,8450167.05,9298096.88,5073013.35,4225083.53],"actual_2025":[1242440.05,2383318.03,5527114.13,6384757.56,10820917.83,10507934.47,2353905.92,3373472.68,3105945.13,2953272.28,191054.84,599218.23],"budget_2026":[5306703.2,9060184.19,7438412.89,5473060.15,9118283.73,7302150.66,4982348.94,6759609.65,8017318.37,6835264.44,4099988.32,2732768.23],"actual_2026":[1804974.69,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Free_Standing_GM":{"ly_2024":[689442.01,1477658.92,1547857.64,724008.19,1865880.23,2569931.13,1246092.89,1154425.05,961106.84,839793.3,1134587.03,812174.83],"budget_2025":[757580.54,3478711.26,1362774.3,1515161.08,1818462.66,1362774.3,909967.32,1515161.08,1515161.08,1667547.86,909967.32,757580.54],"actual_2025":[243238.31,777083.62,930974.64,-163012.46,2220450.19,2225884.02,428072.33,768298.15,1211464.12,951443.34,49666.43,129635.0],"budget_2026":[731166.12,1248326.78,1024876.52,754087.05,1256331.83,1006102.09,686476.07,931349.91,1104639.05,941773.75,564903.0,376525.21],"actual_2026":[391228.34,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Cassette_GSV":{"ly_2024":[748441.86,425077.45,801025.3,450708.79,327274.14,525852.3,606572.72,1229777.9,731460.41,575274.06,222352.05,522722.49],"budget_2025":[102260.95,7429892.17,1006360.3,1115030.4,1263365.4,975635.65,628087.35,1045910.25,1045910.25,1129409.6,628087.35,516734.35],"actual_2025":[333475.23,190656.12,448059.17,171124.94,386632.72,580980.51,617607.95,367487.36,579680.54,1710978.88,296815.78,475411.71],"budget_2026":[709053.78,709053.78,709053.78,709053.78,709053.78,709053.78,709053.78,709053.78,709053.78,709053.78,709053.78,709053.78],"actual_2026":[546884.55,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Cassette_NSV":{"ly_2024":[709671.9,397492.27,745221.44,437508.65,317740.42,515527.87,574080.48,1176060.87,712464.94,551633.02,209583.14,503947.81],"budget_2025":[96125.29,6811545.95,945978.68,1048128.58,1187563.48,917097.51,590402.11,983155.63,983155.63,1061645.02,590402.11,485730.29],"actual_2025":[324014.8,183144.75,416708.76,-11257.08,335916.0,533107.3,543621.89,288147.93,533858.93,1547611.23,284632.68,437930.45],"budget_2026":[610495.31,610495.31,610495.31,610495.31,610495.31,610495.31,610495.31,610495.31,610495.31,610495.31,610495.31,610495.31],"actual_2026":[506726.66,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Cassette_COGS":{"ly_2024":[513884.91,283792.8,566162.07,312836.47,224727.19,355613.65,415298.15,875790.84,522257.6,415399.17,159056.4,374063.84],"budget_2025":[52850.14,5916012.75,457382.26,489156.65,545078.15,438976.36,276279.99,461865.28,461865.28,497935.03,276279.99,230747.07],"actual_2025":[226856.78,125302.49,296527.55,130156.96,268172.37,413978.97,432206.82,253168.92,414107.93,1141305.4,197593.13,310222.81],"budget_2026":[494210.49,494210.49,494210.49,494210.49,494210.49,494210.49,494210.49,494210.49,494210.49,494210.49,494210.49,494210.49],"actual_2026":[359112.5,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Cassette_GM":{"ly_2024":[195786.99,113699.47,179059.37,124672.18,93013.23,159914.22,158782.33,300270.03,190207.34,136233.85,50526.74,129883.97],"budget_2025":[43275.15,1068933.2,488596.42,558971.92,642485.32,478121.15,314122.12,521290.36,521290.36,563709.99,314122.12,254983.22],"actual_2025":[97158.02,57842.26,120181.21,-141414.04,67743.63,119128.33,111415.07,34979.01,119751.0,406305.83,87039.55,127707.64],"budget_2026":[116284.82,116284.82,116284.82,116284.82,116284.82,116284.82,116284.82,116284.82,116284.82,116284.82,116284.82,116284.82],"actual_2026":[147689.16,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Concealed_CAC_GSV":{"ly_2024":[2284601.65,3935432.18,2480109.9,2615520.8,2341905.09,4173436.13,1789533.45,2800141.33,1775296.53,6293839.88,2978352.48,3029383.07],"budget_2025":[1155568.62,865489.9,3838518.17,4281433.97,5267111.11,3868070.77,2606723.38,4406131.87,4406131.87,4965277.52,2606723.38,2134012.57],"actual_2025":[1249613.48,1416912.74,1075010.54,2040085.37,4017831.58,1593819.0,1164561.69,1942403.11,3830084.87,4700555.65,1381149.37,668019.23],"budget_2026":[3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92,3369747.92],"actual_2026":[6783338.52,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Concealed_CAC_NSV":{"ly_2024":[2164488.51,3683834.51,2243696.42,2491113.99,2230640.71,3983559.31,1720783.41,2623504.63,1695514.26,5966402.24,2870012.96,2871663.64],"budget_2025":[1086234.5,804905.61,3608207.08,4024547.93,4951084.44,3635986.53,2450319.97,4141763.96,4141763.96,4667360.86,2450319.97,2005971.81],"actual_2025":[1193318.03,1364550.66,1009441.5,1470860.39,3508622.78,1457775.53,1079349.06,1793509.07,3336272.15,4158948.68,1076341.57,618484.76],"budget_2026":[2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92,2955268.92],"actual_2026":[6028510.39,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Concealed_CAC_COGS":{"ly_2024":[1606314.05,2917915.44,1769022.18,1939749.48,1748388.33,3135368.42,1280224.42,2027331.51,1299668.07,4783617.27,2163274.26,2306759.05],"budget_2025":[731175.53,376498.81,2502816.08,2790762.07,3436135.2,2521711.58,1699126.2,2872762.42,2872762.42,3238876.12,1699126.2,1390498.42],"actual_2025":[869067.07,981167.71,776994.49,1377279.08,2701255.86,1095433.79,840422.69,1446623.83,2451571.35,3039901.8,888505.99,492312.85],"budget_2026":[2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32,2308277.32],"actual_2026":[4761430.32,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Concealed_CAC_GM":{"ly_2024":[558174.46,765919.07,474674.24,551364.51,482252.38,848190.89,440558.99,596173.12,395846.19,1182784.97,706738.7,564904.59],"budget_2025":[355058.98,428406.8,1105391.01,1233785.86,1514949.24,1114274.95,751193.77,1269001.53,1269001.53,1428484.74,751193.77,615473.39],"actual_2025":[324250.96,383382.95,232447.01,93581.31,807366.92,362341.74,298991.06,407355.24,989420.8,1119046.88,187835.58,126171.91],"budget_2026":[646991.6,646991.6,646991.6,646991.6,646991.6,646991.6,646991.6,646991.6,646991.6,646991.6,646991.6,646991.6],"actual_2026":[1517246.02,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Package_CAC_GSV":{"ly_2024":[85774.0,758400.0,143320.55,527717.25,192945.18,312903.74,736930.1,769573.09,1719457.4,38286.0,399229.2,497775.16],"budget_2025":[352882.75,3089777.85,628875.64,859875.64,998475.64,813675.64,527172.25,859875.64,859875.64,906075.64,527172.25,352882.75],"actual_2025":[266889.5,44754.6,701445.5,417857.55,409426.98,318192.2,277891.66,492043.57,590070.78,115506.75,93397.9,964998.5],"budget_2026":[462368.92,462368.92,462368.92,462368.92,462368.92,462368.92,462368.92,462368.92,462368.92,462368.92,462368.92,462368.92],"actual_2026":[289599.18,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Package_CAC_NSV":{"ly_2024":[83802.68,729333.87,133625.82,518306.92,183735.65,283220.09,725841.71,745408.74,1650751.48,37253.26,386743.58,511231.31],"budget_2025":[331709.79,2873493.4,591143.1,808283.1,938567.1,764855.1,495541.92,808283.1,808283.1,851711.1,495541.92,331709.79],"actual_2025":[262582.82,43411.96,674389.3,343779.37,371169.79,301374.69,264328.46,444376.59,557171.4,97501.71,86174.97,948815.31],"budget_2026":[425379.41,425379.41,425379.41,425379.41,425379.41,425379.41,425379.41,425379.41,425379.41,425379.41,425379.41,425379.41],"actual_2026":[272807.12,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Package_CAC_COGS":{"ly_2024":[56271.8,512803.26,102476.21,374527.42,140550.61,201500.57,499774.18,541709.14,1272950.03,27073.25,269856.23,361150.89],"budget_2025":[221731.42,2019129.52,397000.58,541451.7,628122.38,512561.48,334400.62,541451.7,541451.7,570341.93,334400.62,221731.42],"actual_2025":[190928.26,34540.12,489799.46,272654.68,270790.17,228850.48,188586.26,318287.11,415648.09,72184.15,65040.76,695362.32],"budget_2026":[316722.71,316722.71,316722.71,316722.71,316722.71,316722.71,316722.71,316722.71,316722.71,316722.71,316722.71,316722.71],"actual_2026":[188694.82,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Package_CAC_GM":{"ly_2024":[27530.88,216530.61,31149.61,143779.5,43185.04,81719.52,226067.53,203699.6,377801.45,10180.01,116887.35,150080.42],"budget_2025":[109978.36,854363.87,194142.52,266831.4,310444.72,252293.62,161141.29,266831.4,266831.4,281369.17,161141.29,109978.36],"actual_2025":[71654.56,8871.84,184589.84,71124.69,100379.62,72524.21,78609.24,141289.48,168223.31,25317.56,21134.21,253452.99],"budget_2026":[108656.7,108656.7,108656.7,108656.7,108656.7,108656.7,108656.7,108656.7,108656.7,108656.7,108656.7,108656.7],"actual_2026":[92256.01,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Multi_V_GSV":{"ly_2024":[0,0,0,0,0,0,0,0,0,0,0,0],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[0,0,0,0,1078518.13,12728.66,177948.06,167247.7,240459.1,461520.87,124344.17,1007598.85],"budget_2026":[283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06],"actual_2026":[580777.59,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Multi_V_NSV":{"ly_2024":[0,0,0,0,0,0,0,0,0,0,0,0],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[0,0,0,0,1068817.97,12735.78,174957.15,161454.4,230805.05,447582.6,-22613.4,1000161.64],"budget_2026":[274751.37,274751.37,274751.37,274751.37,274751.37,274751.37,274751.37,274751.37,274751.37,274751.37,274751.37,274751.37],"actual_2026":[540475.48,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Multi_V_COGS":{"ly_2024":[0,0,0,0,0,0,0,0,0,0,0,0],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[0,0,0,0,436693.78,17832.68,109035.56,84541.9,119098.77,195075.61,66162.9,561514.84],"budget_2026":[175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12],"actual_2026":[307323.94,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Multi_V_GM":{"ly_2024":[0,0,0,0,0,0,0,0,0,0,0,0],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[0,0,0,0,632124.19,-5096.9,65921.59,76912.5,111706.28,252506.99,-88776.3,438646.8],"budget_2026":[98774.25,98774.25,98774.25,98774.25,98774.25,98774.25,98774.25,98774.25,98774.25,98774.25,98774.25,98774.25],"actual_2026":[233151.54,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Others_GSV":{"ly_2024":[2820.3,1032.69,976.64,20148.06,29871.68,3860.6,148396.85,-45748.17,72242.01,31663.77,-72707.11,67009.42],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[688736.67,181860.68,104177.6,459723.26,67563.22,-3789.11,-22895.83,-15105.07,13074.13,6214.67,20319.19,893.97],"budget_2026":[283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06,283834.06],"actual_2026":[576552.38,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Others_NSV":{"ly_2024":[2334.13,-420.03,-1599388.99,-981903.37,-1138443.15,-996942.92,-859748.63,-1046525.33,-929579.37,-268528.83,-1068421.09,-936949.71],"budget_2025":[0,0,0,0,0,0,0,0,0,0,0,0],"actual_2025":[671100.55,179896.58,103121.25,394071.08,67632.39,-3769.2,-22956.77,-15105.08,1247058.39,5818.03,20115.99,883.04],"budget_2026":[274751.37,274751.37,2874751.37,1274751.37,1274751.37,1274751.37,1274751.37,1274751.37,1274751.37,774751.37,1274751.37,1274751.37],"actual_2026":[536588.28,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Others_COGS":{"ly_2024":[626002.16,523807.89,939727.15,647485.45,893103.38,115426.86,959690.63,1292902.43,735600.34,574589.32,538011.91,276396.33],"budget_2025":[762844.21,545676.68,744398.63,814322.45,1354748.7,1161599.13,730428.37,992964.42,983115.9,1109646.02,620288.87,495317.05],"actual_2025":[736516.46,556533.58,948568.26,787172.64,235360.58,484211.81,603124.19,1015724.18,950518.84,418318.3,139349.05,69040.06],"budget_2026":[175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12,175977.12],"actual_2026":[738028.93,0,0,0,0,0,0,0,0,0,0,0]},"B2C_Others_GM":{"ly_2024":[-873668.03,-774227.92,2410883.86,-1879388.82,-2281546.53,-2362369.78,-2069439.26,-2589427.76,-1915179.71,-1093118.15,-1856433.0,-463346.04],"budget_2025":[-1117860.75,-731093.52,-979646.58,-1069871.68,-1707145.59,-1437315.84,-903743.92,-1253487.94,-1243698.89,-1396868.96,-779134.09,-622689.54],"actual_2025":[-420415.91,-562053.84,-1081447.01,-648650.79,-520125.08,-763981.01,-799396.96,-1291352.78,35956.56,-699723.21,-278078.06,-195806.51],"budget_2026":[-88798.51,-218301.98,2446442.55,894853.29,779389.41,848021.56,907116.1,864770.3,806635.65,360217.54,946038.72,988906.42],"actual_2026":[-389013.41,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Multi_V_GSV":{"ly_2024":[17272798.42,11772261.07,14602204.72,23628488.79,11900110.44,13823464.05,10886229.63,9400196.03,16185680.29,16844601.97,11749473.04,18032144.49],"budget_2025":[13725000.0,13725000.0,13725000.0,13725000.0,13725000.0,13725000.0,16775000.0,16775000.0,16775000.0,16775000.0,16775000.0,16775000.0],"actual_2025":[16345545.2,19767055.72,20669531.19,18644487.15,26080101.9,25636493.8,18258294.73,13103616.62,21092190.87,22489118.71,20692119.93,21773258.03],"budget_2026":[27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56,27208458.56],"actual_2026":[24311743.09,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Multi_V_NSV":{"ly_2024":[17262073.38,11772261.07,14571012.84,23593532.59,11841106.15,13779282.96,10885271.07,9388773.56,16110442.77,16846283.29,11688483.47,18031934.49],"budget_2025":[13560300.0,13560300.0,13560300.0,13560300.0,13560300.0,13560300.0,16573700.0,16573700.0,16573700.0,16573700.0,16573700.0,16573700.0],"actual_2025":[16317834.04,19750131.74,20584185.12,18615524.83,26064974.24,25606222.06,18257119.29,13077318.99,20992911.04,22494342.13,20689342.32,21650050.33],"budget_2026":[26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59,26854748.59],"actual_2026":[23332844.02,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Multi_V_COGS":{"ly_2024":[10971603.29,7489168.91,8578430.44,12792459.12,6954928.39,7700119.1,6257132.75,5455856.93,10257308.1,10544030.86,7292151.04,10812589.65],"budget_2025":[8661796.72,8661796.72,8661796.72,8661796.72,8661796.72,8661796.72,10586640.43,10586640.43,10586640.43,10586640.43,10586640.43,10586640.43],"actual_2025":[10122138.87,12897042.04,11482418.05,11518077.71,15146254.48,16467613.03,10526969.34,8175626.01,13816638.02,14854747.13,12033749.69,13761122.65],"budget_2026":[18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7,18564030.7],"actual_2026":[17090134.56,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Multi_V_GM":{"ly_2024":[6290470.09,4283092.16,5992582.4,10801073.47,4886177.76,6079163.86,4628138.32,3932916.63,5853134.67,6302252.43,4396332.43,7219344.84],"budget_2025":[4898503.28,4898503.28,4898503.28,4898503.28,4898503.28,4898503.28,5987059.57,5987059.57,5987059.57,5987059.57,5987059.57,5987059.57],"actual_2025":[6195695.17,6853089.7,9101767.07,7097447.12,10918719.76,9138609.03,7730149.95,4901692.98,7176273.02,7639595.0,8655592.63,7888927.68],"budget_2026":[8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89,8290717.89],"actual_2026":[7342709.51,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Concealed_CAC_GSV":{"ly_2024":[14938477.4,12176464.72,12958348.57,8852621.02,13557983.54,7897787.52,12926440.96,13625174.78,11493612.14,13375993.28,11903688.56,12387971.26],"budget_2025":[13875000.0,13875000.0,13875000.0,13875000.0,13875000.0,13875000.0,16958333.33,16958333.33,16958333.33,16958333.33,16958333.33,16958333.33],"actual_2025":[9994534.0,12586929.53,9600334.41,8081203.57,13447719.79,10378190.38,8992685.94,13776999.04,10463204.11,10177078.08,9557143.76,9934200.25],"budget_2026":[14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16,14932141.16],"actual_2026":[9488602.13,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Concealed_CAC_NSV":{"ly_2024":[14855827.67,12160708.93,12857611.63,8797365.14,13345109.92,7753053.85,12668276.33,13428192.83,11335423.79,13117490.91,11800772.93,13585009.24],"budget_2025":[13597500.0,13597500.0,13597500.0,13597500.0,13597500.0,13597500.0,16619166.67,16619166.67,16619166.67,16619166.67,16619166.67,16619166.67],"actual_2025":[9853362.27,12465656.64,9465819.61,7984981.11,13087450.53,9934490.32,8534007.86,13089438.14,10055285.6,9660083.7,9474232.37,9745378.74],"budget_2026":[14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39,14194493.39],"actual_2026":[8967764.17,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Concealed_CAC_COGS":{"ly_2024":[10962240.34,8794886.85,9214751.22,6338827.84,9805402.94,5644052.49,9082151.98,9679661.17,8315898.08,9738819.89,9115579.05,9432954.16],"budget_2025":[10038039.41,10038039.41,10038039.41,10038039.41,10038039.41,10038039.41,12268714.84,12268714.84,12268714.84,12268714.84,12268714.84,12268714.84],"actual_2025":[6947370.39,9368552.01,6623552.23,5890052.44,10193969.4,7697449.49,6847028.87,9929826.43,7700703.23,7361573.13,7157954.77,7449562.94],"budget_2026":[11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24,11221108.24],"actual_2026":[6995390.19,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Concealed_CAC_GM":{"ly_2024":[3893587.33,3365822.08,3735860.41,2590537.3,3755706.98,2109001.36,3586124.35,3854123.66,3207025.71,3378671.02,2685193.88,4152055.08],"budget_2025":[3559460.59,3559460.59,3559460.59,3559460.59,3559460.59,3559460.59,4350451.83,4350451.83,4350451.83,4350451.83,4350451.83,4350451.83],"actual_2025":[2905991.88,3097104.63,3218671.38,2359600.67,3337217.13,2424540.83,2233914.2,3871871.71,2624752.37,2298510.57,2316277.6,2295815.8],"budget_2026":[3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83,3257095.83],"actual_2026":[2300220.53,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Package_CAC_GSV":{"ly_2024":[7744531.72,3423895.94,3299386.46,3483314.84,3596660.25,3075290.35,3530549.67,3988538.28,4595094.22,6636253.83,4115928.63,2694435.55],"budget_2025":[4875000.0,4875000.0,4875000.0,4875000.0,4875000.0,4875000.0,5958333.33,5958333.33,5958333.33,5958333.33,5958333.33,5958333.33],"actual_2025":[3634342.85,3622231.53,2009655.03,4350970.28,2498195.56,3246174.56,3931120.34,2768682.83,4846260.28,2678509.51,5017292.8,2983824.63],"budget_2026":[4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74,4748170.74],"actual_2026":[4662502.01,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Package_CAC_NSV":{"ly_2024":[7712160.06,3321140.52,3271363.42,3476912.11,3577657.17,3037928.74,3500645.34,3943024.86,4566066.95,6630446.41,4112413.63,2674173.92],"budget_2025":[4777500.0,4777500.0,4777500.0,4777500.0,4777500.0,4777500.0,5839166.67,5839166.67,5839166.67,5839166.67,5839166.67,5839166.67],"actual_2025":[3633829.37,3618576.37,2007324.38,4324820.35,2463310.64,3205908.75,3720491.01,2585172.04,4536299.94,2595279.9,4990120.02,2955141.15],"budget_2026":[4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17,4521208.17],"actual_2026":[4427637.72,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Package_CAC_COGS":{"ly_2024":[5241381.4,2355763.37,2398838.34,2458092.29,2537714.88,2214338.45,2444569.26,2769873.76,3317126.81,4736635.66,3003681.75,1915783.53],"budget_2025":[3395497.46,3395497.46,3395497.46,3395497.46,3395497.46,3395497.46,4150052.45,4150052.45,4150052.45,4150052.45,4150052.45,4150052.45],"actual_2025":[2586379.22,2583578.15,1388826.38,2936374.03,1698528.03,2309001.49,2638748.96,1940696.52,3513841.94,2049860.06,3641415.35,2190506.33],"budget_2026":[3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01,3544964.01],"actual_2026":[3391316.93,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Package_CAC_GM":{"ly_2024":[2470778.66,965377.15,872525.08,1018819.82,1039942.29,823590.29,1056076.08,1183536.1,1248940.14,1893810.75,1108731.88,758390.39],"budget_2025":[1382002.54,1382002.54,1382002.54,1382002.54,1382002.54,1382002.54,1689114.21,1689114.21,1689114.21,1689114.21,1689114.21,1689114.21],"actual_2025":[1047450.15,1034998.22,618497.99,1388446.32,764782.61,896907.26,1111194.39,759725.52,1213008.0,670419.84,1348704.67,764634.82],"budget_2026":[1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34,1058862.34],"actual_2026":[1153158.46,0,0,0,0,0,0,0,0,0,0,0]},"B2B_ESCO_GSV":{"ly_2024":[0,541597.71,0,0,123883.38,2563368.84,968861.65,99285.71,724912.27,2840268.38,1166112.64,15408.57],"budget_2025":[3750000.0,3750000.0,3750000.0,3750000.0,3750000.0,3750000.0,4583333.33,4583333.33,4583333.33,4583333.33,4583333.33,4583333.33],"actual_2025":[8400334.3,5305195.94,3923521.6,-16351.69,4419558.29,4999457.73,5098530.7,5728157.79,2976643.37,5341652.33,2242820.1,4071981.16],"budget_2026":[7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67,7294166.67],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_ESCO_NSV":{"ly_2024":[0,495226.15,0,0,123883.38,2563368.84,968861.65,99285.71,724912.27,2840268.38,1166112.64,15408.57],"budget_2025":[3750000.0,3750000.0,3750000.0,3750000.0,3750000.0,3750000.0,4583333.33,4583333.33,4583333.33,4583333.33,4583333.33,4583333.33],"actual_2025":[8400334.3,5305195.94,3923521.6,-16351.69,4417725.3,4999457.73,5098530.7,5728157.79,2976643.37,5253861.28,2239842.3,4071981.16],"budget_2026":[7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83,7257695.83],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_ESCO_COGS":{"ly_2024":[74804.96,433277.73,42228.63,512300.0,617300.32,1704883.0,775089.0,79428.68,579929.96,2272215.0,932890.1,115234.43],"budget_2025":[3075000.0,3075000.0,3075000.0,3075000.0,3075000.0,3075000.0,3758333.33,3758333.33,3758333.33,3758333.33,3758333.33,3758333.33],"actual_2025":[6713016.17,3995729.28,3162291.99,-2168.36,5009960.77,4112091.89,3943061.51,4588823.99,2379566.5,4499284.98,1839328.23,3275454.32],"budget_2026":[5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0,5908275.0],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_ESCO_GM":{"ly_2024":[-74804.96,61948.42,-42228.63,-512300.0,-493416.94,858485.84,193772.65,19857.03,144982.31,568053.38,233222.54,-99825.86],"budget_2025":[675000.0,675000.0,675000.0,675000.0,675000.0,675000.0,825000.0,825000.0,825000.0,825000.0,825000.0,825000.0],"actual_2025":[1687318.13,1309466.66,761229.61,-14363.33,-592235.47,887365.84,1173281.53,1145483.8,597076.87,825576.3,400514.07,796526.84],"budget_2026":[1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83,1349420.83],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Split_-_Inverter_GSV":{"ly_2024":[4371382.47,8297290.61,7601211.38,6203697.27,11939756.14,6281052.38,7953373.19,3735148.0,4352717.44,3738142.48,7227904.77,3029666.32],"budget_2025":[7258146.07,7258146.07,7258146.07,7258146.07,7258146.07,7258146.07,8871067.42,8871067.42,8871067.42,8871067.42,8871067.42,8871067.42],"actual_2025":[4868672.36,5699546.39,5476561.48,8041051.41,3238494.98,4549969.81,2914112.05,3258289.56,1890743.66,2171270.88,6056374.72,2185018.44],"budget_2026":[5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78,5986970.78],"actual_2026":[4581675.41,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Split_-_Inverter_NSV":{"ly_2024":[4277609.12,8274578.83,7447437.01,6141078.4,11865266.1,6272446.17,7892127.72,3716427.59,4342312.29,3589363.41,7138374.4,3014687.97],"budget_2025":[7171048.31,7171048.31,7171048.31,7171048.31,7171048.31,7171048.31,8764614.61,8764614.61,8764614.61,8764614.61,8764614.61,8764614.61],"actual_2025":[4839019.6,5679729.32,5453360.19,7954375.84,3190634.91,4526493.68,2830341.79,3247550.97,1877958.53,2158822.21,6044550.47,2178291.1],"budget_2026":[5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52,5712767.52],"actual_2026":[4370026.25,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Split_-_Inverter_COGS":{"ly_2024":[3413412.58,6279081.29,6190263.9,4862513.19,9245452.29,4686816.11,5789122.59,2902402.48,3379339.2,2888135.74,5531782.97,2316308.35],"budget_2025":[5885719.92,5885719.92,5885719.92,5885719.92,5885719.92,5885719.92,7193657.68,7193657.68,7193657.68,7193657.68,7193657.68,7193657.68],"actual_2025":[3696678.66,4940134.46,4333522.27,6414973.43,2545134.67,3765993.21,2406111.07,2758636.75,1645975.67,1753904.67,5226718.15,1825329.09],"budget_2026":[5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41,5065826.41],"actual_2026":[4001197.79,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Split_-_Inverter_GM":{"ly_2024":[864196.54,1995497.54,1473373.11,1477465.21,2803213.81,1585630.06,2103005.13,814025.11,962973.09,701227.67,1606591.43,698379.62],"budget_2025":[1285328.39,1285328.39,1285328.39,1285328.39,1285328.39,1285328.39,1570956.93,1570956.93,1570956.93,1570956.93,1570956.93,1570956.93],"actual_2025":[1142340.94,739594.86,1228587.92,1539402.41,645500.24,760500.47,424230.72,488914.22,231982.86,404917.54,817832.32,352962.01],"budget_2026":[739140.46,739140.46,739140.46,739140.46,739140.46,739140.46,739140.46,739140.46,739140.46,739140.46,739140.46,739140.46],"actual_2026":[368828.46,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Installation_GSV":{"ly_2024":[1789060.9,3627865.96,845481.1,2704202.43,2666144.19,1119881.73,1434582.15,8931001.92,4858122.03,1686799.07,5799406.97,2395370.74],"budget_2025":[3975000.0,3975000.0,3975000.0,3975000.0,3975000.0,3975000.0,4858333.33,4858333.33,4858333.33,4858333.33,4858333.33,4858333.33],"actual_2025":[5427569.48,2989894.58,3856603.27,4254499.99,1125144.66,6233195.32,3181204.26,4876406.52,5379206.44,4335085.56,4157885.19,3480858.5],"budget_2026":[5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Installation_NSV":{"ly_2024":[1789060.9,3627865.96,845481.1,2704202.43,2666144.19,1119881.73,1434582.15,8931001.92,4845087.45,1686799.07,5799406.97,2395370.74],"budget_2025":[3975000.0,3975000.0,3975000.0,3975000.0,3975000.0,3975000.0,4858333.33,4858333.33,4858333.33,4858333.33,4858333.33,4858333.33],"actual_2025":[5427569.48,2989894.58,3856603.27,4254499.99,1125144.66,6233195.32,3181204.26,4876406.52,5379206.44,4335085.56,4157885.19,3480858.5],"budget_2026":[5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0,5855000.0],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Installation_COGS":{"ly_2024":[1610719.57,2622442.0,582331.0,1660906.6,1880196.0,2135481.0,1098773.0,5194475.0,2914783.0,1158616.0,3814125.0,1723527.99],"budget_2025":[3180000.0,3180000.0,3180000.0,3180000.0,3180000.0,3180000.0,3886666.67,3886666.67,3886666.67,3886666.67,3886666.67,3886666.67],"actual_2025":[3481404.69,2204986.49,2775955.73,3120000.0,892500.0,4410587.97,2508389.6,3674490.0,3952000.0,2726862.0,2736531.0,2390621.0],"budget_2026":[4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0,4391250.0],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Installation_GM":{"ly_2024":[178341.33,1005423.96,263150.1,1043295.83,785948.19,-1015599.27,335809.15,3736526.92,1930304.45,528183.07,1985281.97,671842.75],"budget_2025":[795000.0,795000.0,795000.0,795000.0,795000.0,795000.0,971666.67,971666.67,971666.67,971666.67,971666.67,971666.67],"actual_2025":[1946164.79,784908.09,1080647.54,1134499.99,232644.66,1822607.35,672814.66,1201916.52,1427206.44,1608223.56,1421354.19,1090237.5],"budget_2026":[1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0,1463750.0],"actual_2026":[0,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Product_GSV":{"ly_2024":[48503948.04,38896734.99,42176965.01,44900728.92,44459970.32,37740769.67,38286577.17,34062957.4,39512870.5,42516622.06,37582805.11,38322759.96],"budget_2025":[44775000.0,44775000.0,44775000.0,44775000.0,44775000.0,44775000.0,54725000.0,54725000.0,54725000.0,54725000.0,54725000.0,54725000.0],"actual_2025":[37226263.01,43641730.02,41951423.5,46389354.03,50888915.92,46465377.04,35982830.39,35083526.24,40128352.79,39387644.91,42993175.9,40870616.86],"budget_2026":[57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67,57684166.67],"actual_2026":[45047829.93,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Product_NSV":{"ly_2024":[48229663.23,38693768.08,41831526.86,44709194.84,44025177.54,37475707.14,37893945.77,33761115.72,39215530.03,42079737.04,37262281.19,39430900.55],"budget_2025":[44123700.0,44123700.0,44123700.0,44123700.0,44123700.0,44123700.0,53928966.67,53928966.67,53928966.67,53928966.67,53928966.67,53928966.67],"actual_2025":[36992909.01,43452380.77,41688345.27,46126430.59,50331283.16,45836752.55,35190600.95,34146117.4,39276140.16,38703632.12,42837739.52,40505181.65],"budget_2026":[55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88,55924832.88],"actual_2026":[43005032.33,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Product_COGS":{"ly_2024":[35009640.07,28474192.79,30270048.11,30246700.08,32309371.54,26255135.98,26847849.48,24124927.56,28657313.86,30724757.9,27831082.72,27384911.86],"budget_2025":[31866792.38,31866792.38,31866792.38,31866792.38,31866792.38,31866792.38,38948301.8,38948301.8,38948301.8,38948301.8,38948301.8,38948301.8],"actual_2025":[26383718.67,32767501.46,29135801.96,34664943.26,35822326.26,33963349.96,25390754.1,25480066.71,29601224.97,28685981.33,30747609.41,29693851.77],"budget_2026":[42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5,42397862.5],"actual_2026":[33018037.61,0,0,0,0,0,0,0,0,0,0,0]},"B2B_Product_GM":{"ly_2024":[13112524.16,10019575.29,11670678.75,14593394.76,11976206.0,11020571.16,10846096.29,9616635.16,10545716.17,11184629.14,9248448.89,11845988.69],"budget_2025":[12048574.28,12048574.28,12048574.28,12048574.28,12048574.28,12048574.28,14772331.53,14772331.53,14772331.53,14772331.53,14772331.53,14772331.53],"actual_2025":[10401190.34,10476545.98,12829363.98,11517826.0,14744359.57,11852569.26,10167901.4,9285227.36,9927301.86,9934317.46,11881797.11,10855703.88],"budget_2026":[13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97,13765630.97],"actual_2026":[11532579.0,0,0,0,0,0,0,0,0,0,0,0]}};
 
-const MONTHS = RAW.months;
-const Q_LABELS = ['Q1','Q2','Q3','Q4'];
+const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QR=[[0,3],[3,6],[6,9],[9,12]];
+const COLORS=['#3b6ef8','#10b981','#f59e0b','#ef4444','#8b5cf6','#0ea5e9','#f97316','#84cc16','#ec4899','#06b6d4','#a78bfa','#fb923c','#34d399'];
 
-let currentChannel = 'HVAC';
-let currentMetric = 'GSV';
-
-// ─── CHART INSTANCES ─────────────────────────────────────────────────────────
-let charts = {};
-
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-}
-
-const CHART_DEFAULTS = {
-  responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1d27', borderColor: '#2e3350', borderWidth: 1, titleColor: '#e8eaf6', bodyColor: '#7b82a8', padding: 10 } },
-  scales: {
-    x: { grid: { color: 'rgba(46,51,80,0.4)' }, ticks: { color: '#7b82a8', font: { size: 10 } } },
-    y: { grid: { color: 'rgba(46,51,80,0.4)' }, ticks: { color: '#7b82a8', font: { size: 10 } } }
-  }
+// Category config
+const CAT_CFG={
+  B2C:['Window','Split On/Off','Split-Inverter','Free Standing','Cassette','Concealed CAC','Package CAC','Multi V','Others'],
+  B2B:['Multi V','Concealed CAC','Package CAC','ESCO','Split-Inverter','Installation','Product'],
+  HVAC:[],AFS:[]
+};
+const CAT_KEYS={
+  B2C:{'Window':'B2C_Window','Split On/Off':'B2C_Split_On__Off_','Split-Inverter':'B2C_Split_-_Inverter','Free Standing':'B2C_Free_Standing','Cassette':'B2C_Cassette','Concealed CAC':'B2C_Concealed_CAC','Package CAC':'B2C_Package_CAC','Multi V':'B2C_Multi_V','Others':'B2C_Others'},
+  B2B:{'Multi V':'B2B_Multi_V','Concealed CAC':'B2B_Concealed_CAC','Package CAC':'B2B_Package_CAC','ESCO':'B2B_ESCO','Split-Inverter':'B2B_Split_-_Inverter','Installation':'B2B_Installation','Product':'B2B_Product'}
 };
 
-// ─── UTILS ────────────────────────────────────────────────────────────────────
-function getKey(ch, metric) { return `${ch}_${metric}`; }
-function getData(ch, metric) { return RAW.data[getKey(ch, metric)] || {}; }
-function fmtM(v) { return (v/1e6).toFixed(1) + 'M'; }
-function fmtPct(v) { return v.toFixed(1) + '%'; }
-function sum(arr) { return arr.reduce((a,b) => a+b, 0); }
-function avg(arr) { return sum(arr)/arr.length; }
-function vsChange(actual, base) { return base !== 0 ? ((actual - base) / Math.abs(base) * 100) : 0; }
+let ch='HVAC', metric='GSV', yr='2025', cat='Total';
+let charts={};
 
-// ─── KPI CARDS ────────────────────────────────────────────────────────────────
-function buildKPIs() {
-  const metric = currentMetric === 'GM_PCT' ? 'GM_PCT' : currentMetric;
-  const d = getData(currentChannel, metric);
-  if (!d.actual_2025) return;
+// ── UTILS ──────────────────────────────────────────────────────────────────────
+const isPct=m=>['GM_PCT','SD_PCT','COGS_PCT'].includes(m);
+const sum=a=>a.reduce((s,v)=>s+v,0);
+const sumNZ=a=>sum(a.filter(v=>v!==0));
+const avgNZ=a=>{const nz=a.filter(v=>v!==0);return nz.length?sum(nz)/nz.length:0;}
+const agg=(a,m)=>isPct(m)?avgNZ(a):sumNZ(a);
+const nonNull=(a,i)=>a[i]!==0||i<3?a[i]:null;
 
-  const isPct = metric === 'GM_PCT';
-  const fmt = isPct ? fmtPct : fmtM;
+function fmtN(v){
+  if(Math.abs(v)>=1e9)return (v/1e9).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'B';
+  if(Math.abs(v)>=1e6)return (v/1e6).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})+'M';
+  return Math.round(v).toLocaleString('en-US');
+}
+function fmtFull(v){return Math.round(v).toLocaleString('en-US');}
+function fmt(v,m){return isPct(m)?v.toFixed(2)+'%':fmtN(v);}
+function vsC(a,b){return b!==0?(a-b)/Math.abs(b)*100:0;}
 
-  const actualAnn = sum(d.actual_2025);
-  const budgetAnn = sum(d.budget_2025);
-  const lyAnn = sum(d.ly_2024);
-  const budget2026Ann = sum(d.budget_2026);
+function getKeys(){
+  if(yr==='2025')return{actual:'actual_2025',budget:'budget_2025',ly:'ly_2024'};
+  return{actual:'actual_2026',budget:'budget_2026',ly:'actual_2025'};
+}
 
-  const vsB = vsChange(actualAnn, budgetAnn);
-  const vsPY = vsChange(actualAnn, lyAnn);
-  const growthVsB26 = vsChange(budget2026Ann, actualAnn);
+function getDataKey(){
+  // Returns the data key prefix
+  if(cat==='Total')return`${ch}_${metric}`;
+  const catKey=CAT_KEYS[ch]?.[cat];
+  if(!catKey)return`${ch}_${metric}`;
+  return`${catKey}_${metric}`;
+}
 
-  const kpis = [
-    { label: '2025 Actual (연간)', value: isPct ? fmtPct(avg(d.actual_2025)) : fmtM(actualAnn), sub: `vs Budget ${vsB >= 0 ? '+' : ''}${vsB.toFixed(1)}%`, cls: vsB >= 0 ? 'pos' : 'neg', color: 'blue' },
-    { label: '2025 Budget (연간)', value: isPct ? fmtPct(avg(d.budget_2025)) : fmtM(budgetAnn), sub: '목표 금액', cls: 'neu', color: 'orange' },
-    { label: '전년 2024 (LY)', value: isPct ? fmtPct(avg(d.ly_2024)) : fmtM(lyAnn), sub: `YoY ${vsPY >= 0 ? '+' : ''}${vsPY.toFixed(1)}%`, cls: vsPY >= 0 ? 'pos' : 'neg', color: 'purple' },
-    { label: '2026 Budget', value: isPct ? fmtPct(avg(d.budget_2026)) : fmtM(budget2026Ann), sub: `vs 2025A ${growthVsB26 >= 0 ? '+' : ''}${growthVsB26.toFixed(1)}%`, cls: growthVsB26 >= 0 ? 'pos' : 'neg', color: 'green' }
+function getData(){
+  const k=getDataKey();
+  return D[k]||D[`${ch}_${metric}`]||{};
+}
+
+// ── CHART HELPERS ──────────────────────────────────────────────────────────────
+const BASE={responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1f36',titleColor:'#fff',bodyColor:'rgba(255,255,255,.75)',borderColor:'rgba(255,255,255,.1)',borderWidth:1,padding:10,cornerRadius:8}},
+  scales:{x:{grid:{color:'#f0f2f7'},ticks:{color:'#9ca3af',font:{size:10}}},y:{grid:{color:'#f0f2f7'},ticks:{color:'#9ca3af',font:{size:10}}}}};
+
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function mkL(id,labels,datasets,yF){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  const o=JSON.parse(JSON.stringify(BASE));
+  o.scales.y.ticks.callback=yF;
+  o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${yF(c.raw)}`};
+  charts[id]=new Chart(ctx,{type:'line',data:{labels,datasets},options:o});
+}
+function mkB(id,labels,datasets,yF,leg){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  const o=JSON.parse(JSON.stringify(BASE));
+  o.scales.y.ticks.callback=yF;
+  o.plugins.tooltip.callbacks={label:c=>`${c.dataset.label}: ${yF(c.raw||0)}`};
+  if(leg)o.plugins.legend={display:true,position:'bottom',labels:{color:'#9ca3af',font:{size:10},usePointStyle:true,padding:10}};
+  charts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:o});
+}
+function lds(label,data,color,dash){return{label,data,borderColor:color,backgroundColor:'transparent',tension:.3,pointRadius:3,pointHoverRadius:5,borderWidth:2,borderDash:dash||[]};}
+function lda(label,data,color,alpha){return{label,data,borderColor:color,backgroundColor:color.replace(')',`,${alpha})`).replace('rgb','rgba'),tension:.3,pointRadius:3,pointHoverRadius:5,borderWidth:2.5,fill:true};}
+
+// ── CATEGORY BAR ──────────────────────────────────────────────────────────────
+function buildCatBar(){
+  const cats=CAT_CFG[ch]||[];
+  const bar=document.getElementById('catBar');
+  bar.innerHTML='<span class="cat-label">카테고리</span>';
+  const totalBtn=document.createElement('button');
+  totalBtn.className='cat-btn'+(cat==='Total'?' on':'');
+  totalBtn.textContent='전체 합계';
+  totalBtn.onclick=()=>{cat='Total';renderAll();};
+  bar.appendChild(totalBtn);
+  cats.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='cat-btn'+(cat===c?' on':'');
+    b.textContent=c;
+    b.onclick=()=>{cat=c;renderAll();};
+    bar.appendChild(b);
+  });
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function buildKPIs(){
+  const d=getData();
+  if(!d.actual_2025)return;
+  const{actual,budget,ly}=getKeys();
+  const a=agg(d[actual]||[],metric),b=agg(d[budget]||[],metric),l=agg(d[ly]||[],metric);
+  const nb=yr==='2025'?agg(d.budget_2026||[],metric):null;
+  const avb=vsC(a,b),aly=vsC(a,l);
+  const lyLbl=yr==='2025'?'LY 2024':'LY 2025 (Actual)';
+  const items=[
+    {icon:'📈',lbl:`${yr} Actual`,val:fmt(a,metric),c:'b',pill:`vs Budget ${avb>=0?'+':''}${avb.toFixed(1)}%`,pos:avb>=0},
+    {icon:'🎯',lbl:`${yr} Budget`,val:fmt(b,metric),c:'o',pill:'연간 목표',pos:null},
+    {icon:'📅',lbl:lyLbl,val:fmt(l,metric),c:'p',pill:`YoY ${aly>=0?'+':''}${aly.toFixed(1)}%`,pos:aly>=0},
+    {icon:'🔭',lbl:yr==='2025'?'2026 Budget':'—',val:nb!==null?fmt(nb,metric):'—',c:'g',pill:nb!==null?`vs ${yr}A ${vsC(nb,a)>=0?'+':''}${vsC(nb,a).toFixed(1)}%`:'',pos:nb!==null?vsC(nb,a)>=0:null}
   ];
-
-  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-    <div class="kpi-card ${k.color}">
-      <div class="kpi-label">${k.label}</div>
-      <div class="kpi-value" style="color:${k.color === 'blue' ? 'var(--blue)' : k.color === 'green' ? 'var(--green)' : k.color === 'orange' ? 'var(--orange)' : 'var(--purple)'}">${k.value}</div>
-      <div class="kpi-sub"><span class="pill ${k.cls}">${k.sub}</span></div>
-    </div>`).join('');
+  document.getElementById('kpiGrid').innerHTML=items.map(k=>`
+    <div class="kpi"><div class="ki ${k.c}">${k.icon}</div>
+    <div class="kl">${k.lbl}</div>
+    <div class="kv ${k.c}">${k.val}</div>
+    <div class="ks">${k.pill?`<span class="pill ${k.pos===null?'neu':k.pos?'pos':'neg'}">${k.pill}</span>`:''}</div></div>`).join('');
 }
 
-// ─── TREND CHART ─────────────────────────────────────────────────────────────
-function buildTrendChart() {
-  destroyChart('trend');
-  const d = getData(currentChannel, currentMetric);
-  if (!d.actual_2025) return;
-  const isPct = currentMetric === 'GM_PCT';
-
-  document.getElementById('trendTitle').textContent = `${currentChannel} ${currentMetric} — 월별 추이`;
-
-  const ctx = document.getElementById('trendChart').getContext('2d');
-  charts['trend'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: MONTHS,
-      datasets: [
-        { label: 'Actual 2025', data: d.actual_2025, borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,0.08)', tension: 0.35, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2.5 },
-        { label: 'Budget 2025', data: d.budget_2025, borderColor: '#f7a34f', backgroundColor: 'transparent', tension: 0.35, borderDash: [5,3], pointRadius: 2, borderWidth: 1.5, borderDashOffset: 0 },
-        { label: 'LY 2024', data: d.ly_2024, borderColor: '#7b82a8', backgroundColor: 'transparent', tension: 0.35, borderDash: [3,3], pointRadius: 2, borderWidth: 1.2 },
-        { label: 'Budget 2026', data: d.budget_2026, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.05)', tension: 0.35, pointRadius: 2, borderWidth: 1.5 }
-      ]
-    },
-    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: ctx => `${ctx.dataset.label}: ${isPct ? ctx.raw.toFixed(1)+'%' : fmtM(ctx.raw)}` } } }, scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => isPct ? v.toFixed(0)+'%' : fmtM(v) } } } }
-  });
+// ── TREND ──────────────────────────────────────────────────────────────────────
+function buildTrend(){
+  const d=getData();
+  if(!d.actual_2025)return;
+  const{actual,budget,ly}=getKeys();
+  const pct=isPct(metric);
+  const yF=v=>pct?v.toFixed(1)+'%':fmtN(v);
+  const aLbl=`Actual ${yr}`,bLbl=`Budget ${yr}`,lyLbl=yr==='2025'?'LY 2024':'LY 2025';
+  const aData=(d[actual]||[]).map((v,i)=>v===0&&i>=3&&yr==='2026'?null:v);
+  document.getElementById('tT').textContent=`${cat==='Total'?ch:cat} ${metric} — 월별 추이 (${yr})`;
+  document.getElementById('tS').textContent=`${aLbl} · ${bLbl} · ${lyLbl}`;
+  document.getElementById('tLeg').innerHTML=[['#3b6ef8',aLbl],['#f59e0b',bLbl],['#9ca3af',lyLbl]].map(([c,l])=>`<div class="li"><div class="ld" style="background:${c}"></div>${l}</div>`).join('');
+  mkL('tC',MOS,[lda(aLbl,aData,'rgb(59,110,248)',.06),{...lds(bLbl,d[budget]||[],'#f59e0b',[5,3]),borderWidth:1.5},{...lds(lyLbl,d[ly]||[],'#9ca3af',[3,3]),borderWidth:1.2}],yF);
 }
 
-// ─── PIE CHART ───────────────────────────────────────────────────────────────
-function buildPieChart() {
-  destroyChart('pie');
-  const channels = ['B2C', 'B2B', 'AFS'];
-  const vals = channels.map(ch => sum(getData(ch, 'NSV').actual_2025 || []));
-  const ctx = document.getElementById('pieChart').getContext('2d');
-  charts['pie'] = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: channels,
-      datasets: [{ data: vals, backgroundColor: ['#4f8ef7','#34c98a','#a78bfa'], borderColor: '#1a1d27', borderWidth: 3 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#7b82a8', font: { size: 11 }, padding: 12, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmtM(ctx.raw)} (${(ctx.raw/vals.reduce((a,b)=>a+b)*100).toFixed(1)}%)` } } }
-    }
-  });
+// ── PIE ──────────────────────────────────────────────────────────────────────
+function buildPie(){
+  dc('pC');
+  const{actual}=getKeys();
+  document.getElementById('pieSub').textContent=`${yr} Actual 기준`;
+  const chs=['B2C','B2B','AFS'];
+  const vals=chs.map(c=>sumNZ(D[`${c}_NSV`]?.[actual]||[]));
+  const ctx=document.getElementById('pC').getContext('2d');
+  charts['pC']=new Chart(ctx,{type:'doughnut',data:{labels:chs,datasets:[{data:vals,backgroundColor:['#3b6ef8','#10b981','#8b5cf6'],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#6b7280',font:{size:11},padding:12,usePointStyle:true}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmtN(c.raw)} (${(c.raw/sum(vals)*100).toFixed(1)}%)`}}}}});
 }
 
-// ─── AVB QUARTERLY ───────────────────────────────────────────────────────────
-function buildAvbChart() {
-  destroyChart('avb');
-  const d = getData(currentChannel, currentMetric);
-  if (!d.actual_q_2025) return;
-  const isPct = currentMetric === 'GM_PCT';
-
-  const ctx = document.getElementById('avbChart').getContext('2d');
-  const achieveColors = Q_LABELS.map((_, i) => {
-    if (!d.actual_q_2025[i]) return 'rgba(79,142,247,0.3)';
-    const r = d.actual_q_2025[i] / d.budget_q_2025[i];
-    return r >= 1 ? '#34c98a' : r >= 0.9 ? '#f7a34f' : '#f75c5c';
-  });
-
-  charts['avb'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Q_LABELS,
-      datasets: [
-        { label: 'Budget', data: d.budget_q_2025, backgroundColor: 'rgba(247,163,79,0.25)', borderColor: '#f7a34f', borderWidth: 1.5, borderRadius: 4 },
-        { label: 'Actual', data: d.actual_q_2025, backgroundColor: achieveColors, borderRadius: 4 }
-      ]
-    },
-    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: true, position: 'bottom', labels: { color: '#7b82a8', font: { size: 10 } } }, tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: ctx => `${ctx.dataset.label}: ${isPct ? ctx.raw.toFixed(1)+'%' : fmtM(ctx.raw)}` } } }, scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => isPct ? v+'%' : fmtM(v) } } } }
-  });
+// ── AVB ──────────────────────────────────────────────────────────────────────
+function buildAvb(){
+  const d=getData();
+  if(!d.actual_2025)return;
+  const{actual,budget}=getKeys();
+  const pct=isPct(metric);
+  const yF=v=>pct?v.toFixed(1)+'%':fmtN(v);
+  const aQ=QR.map(([s,e])=>{const sl=(d[actual]||[]).slice(s,e);const nz=sl.filter(v=>v!==0);return nz.length?(pct?sum(nz)/nz.length:sum(sl)):null;});
+  const bQ=QR.map(([s,e])=>{const sl=(d[budget]||[]).slice(s,e);return pct?sum(sl)/sl.length:sum(sl);});
+  document.getElementById('qT').textContent=`분기별 Actual vs Budget (${yr})`;
+  const cols=aQ.map((a,i)=>{if(a===null)return'rgba(209,213,219,.5)';const r=a/bQ[i];return r>=1?'#10b981':r>=.9?'#f59e0b':'#ef4444';});
+  mkB('qC',['Q1','Q2','Q3','Q4'],[{label:`Budget ${yr}`,data:bQ,backgroundColor:'rgba(245,158,11,.15)',borderColor:'#f59e0b',borderWidth:1.5,borderRadius:5},{label:`Actual ${yr}`,data:aQ,backgroundColor:cols,borderRadius:5}],yF,true);
 }
 
-// ─── GM% TREND ───────────────────────────────────────────────────────────────
-function buildGMPctChart() {
-  destroyChart('gmpct');
-  const d = getData(currentChannel, 'GM_PCT');
-  if (!d.actual_2025) return;
-  const ctx = document.getElementById('gmPctChart').getContext('2d');
-  charts['gmpct'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: MONTHS,
-      datasets: [
-        { label: 'Actual', data: d.actual_2025, borderColor: '#34c98a', backgroundColor: 'rgba(52,201,138,0.08)', tension: 0.35, pointRadius: 3, borderWidth: 2.5 },
-        { label: 'Budget', data: d.budget_2025, borderColor: '#f7a34f', borderDash: [5,3], tension: 0.35, pointRadius: 2, borderWidth: 1.5, backgroundColor: 'transparent' },
-        { label: 'LY 2024', data: d.ly_2024, borderColor: '#7b82a8', borderDash: [3,3], tension: 0.35, pointRadius: 2, borderWidth: 1.2, backgroundColor: 'transparent' }
-      ]
-    },
-    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: true, position: 'bottom', labels: { color: '#7b82a8', font: { size: 10 } } }, tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}%` } } }, scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v.toFixed(0)+'%' } } } }
-  });
+// ── ACHIEVE ──────────────────────────────────────────────────────────────────
+function buildAchieve(){
+  const d=getData();
+  if(!d.actual_2025)return;
+  const{actual,budget}=getKeys();
+  const ad=d[actual]||[],bd=d[budget]||[];
+  const rates=MOS.map((_,i)=>(bd[i]&&ad[i]!==0)?Math.round(ad[i]/bd[i]*100):null);
+  const cols=rates.map(r=>r===null?'rgba(209,213,219,.4)':r>=100?'#10b981':r>=90?'#f59e0b':'#ef4444');
+  document.getElementById('acSub').textContent=`${cat==='Total'?ch:cat} ${metric} · ${yr}`;
+  dc('aC');const ctx=document.getElementById('aC').getContext('2d');
+  const o=JSON.parse(JSON.stringify(BASE));o.scales.y.ticks.callback=v=>v+'%';o.scales.y.suggestedMin=0;o.scales.y.suggestedMax=140;
+  o.plugins.tooltip.callbacks={label:c=>`달성률: ${c.raw}%`};
+  charts['aC']=new Chart(ctx,{type:'bar',data:{labels:MOS,datasets:[{label:'달성률',data:rates,backgroundColor:cols,borderRadius:4}]},options:o});
 }
 
-// ─── CHANNEL COMPARE ─────────────────────────────────────────────────────────
-function buildChannelChart() {
-  destroyChart('channel');
-  const chs = ['B2C', 'B2B', 'AFS'];
-  const ly = chs.map(ch => sum(getData(ch, 'GSV').ly_2024 || []) / 1e6);
-  const bud = chs.map(ch => sum(getData(ch, 'GSV').budget_2025 || []) / 1e6);
-  const act = chs.map(ch => sum(getData(ch, 'GSV').actual_2025 || []) / 1e6);
-  const bud26 = chs.map(ch => sum(getData(ch, 'GSV').budget_2026 || []) / 1e6);
-  const ctx = document.getElementById('channelChart').getContext('2d');
-  charts['channel'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: chs,
-      datasets: [
-        { label: 'LY 2024', data: ly, backgroundColor: 'rgba(123,130,168,0.4)', borderRadius: 3 },
-        { label: 'Budget 2025', data: bud, backgroundColor: 'rgba(247,163,79,0.5)', borderRadius: 3 },
-        { label: 'Actual 2025', data: act, backgroundColor: '#4f8ef7', borderRadius: 3 },
-        { label: 'Budget 2026', data: bud26, backgroundColor: 'rgba(167,139,250,0.6)', borderRadius: 3 }
-      ]
-    },
-    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins, legend: { display: true, position: 'bottom', labels: { color: '#7b82a8', font: { size: 10 } } }, tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(1)}M` } } }, scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v+'M' } } } }
-  });
+// ── SMALL PCT CHARTS ──────────────────────────────────────────────────────────
+function buildSmall(id,titleId,m2){
+  // Use channel-level data for pct charts (always Total level)
+  const k=`${ch}_${m2}`;
+  const d=D[k];
+  if(!d)return;
+  const{actual,budget,ly}=getKeys();
+  const yF=v=>v.toFixed(1)+'%';
+  const aData=(d[actual]||[]).map((v,i)=>v===0&&i>=3&&yr==='2026'?null:v);
+  if(titleId)document.getElementById(titleId).textContent=`${m2.replace('_',' ')} 추이 — ${ch}`;
+  mkL(id,MOS,[lda(`Actual ${yr}`,aData,'rgb(59,110,248)',.05),{...lds(`Budget ${yr}`,d[budget]||[],'#f59e0b',[4,3]),borderWidth:1.5},{...lds(yr==='2025'?'LY 2024':'LY 2025',d[ly]||[],'#9ca3af',[2,3]),borderWidth:1.2}],yF);
 }
 
-// ─── ACHIEVE CHART ────────────────────────────────────────────────────────────
-function buildAchieveChart() {
-  destroyChart('achieve');
-  const d = getData(currentChannel, currentMetric);
-  if (!d.actual_2025 || !d.budget_2025) return;
-
-  const rates = MONTHS.map((_, i) => d.budget_2025[i] !== 0 ? Math.round(d.actual_2025[i] / d.budget_2025[i] * 100) : 0);
-  const colors = rates.map(r => r >= 100 ? '#34c98a' : r >= 90 ? '#fbbf24' : '#f75c5c');
-  const ctx = document.getElementById('achieveChart').getContext('2d');
-  charts['achieve'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: MONTHS,
-      datasets: [
-        { label: '달성률 (%)', data: rates, backgroundColor: colors, borderRadius: 4 }
-      ]
-    },
-    options: { ...CHART_DEFAULTS,
-      plugins: { ...CHART_DEFAULTS.plugins, tooltip: { ...CHART_DEFAULTS.plugins.tooltip, callbacks: { label: ctx => `달성률: ${ctx.raw}%` } } },
-      scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v+'%' }, suggestedMin: 0, suggestedMax: 140 } }
-    }
-  });
-}
-
-// ─── TABLE ────────────────────────────────────────────────────────────────────
-function buildTable() {
-  const metric = currentMetric;
-  const isPct = metric === 'GM_PCT';
-  const fmt = isPct ? fmtPct : fmtM;
-  const d = getData(currentChannel, metric);
-  if (!d.actual_2025) return;
-
-  document.getElementById('tableTitle').textContent = `📋 ${currentChannel} ${metric} — 월별 상세 (단위: ${isPct ? '%' : 'M'})`;
-
-  const headers = ['월', 'LY 2024', 'Budget 2025', 'Actual 2025', 'A vs B', 'A vs LY', 'Budget 2026'];
-  let html = `<thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
-
-  for (let i = 0; i < 12; i++) {
-    const ly = d.ly_2024[i], bud = d.budget_2025[i], act = d.actual_2025[i], bud26 = d.budget_2026[i];
-    const avb = bud !== 0 ? ((act - bud) / Math.abs(bud) * 100) : 0;
-    const aly = ly !== 0 ? ((act - ly) / Math.abs(ly) * 100) : 0;
-    html += `<tr>
-      <td>${MONTHS[i]}</td>
-      <td class="muted-val">${fmt(ly)}</td>
-      <td class="muted-val">${fmt(bud)}</td>
-      <td style="color:var(--blue);font-weight:700">${fmt(act)}</td>
-      <td class="${avb >= 0 ? 'pos-val' : 'neg-val'}">${avb >= 0 ? '+' : ''}${avb.toFixed(1)}%</td>
-      <td class="${aly >= 0 ? 'pos-val' : 'neg-val'}">${aly >= 0 ? '+' : ''}${aly.toFixed(1)}%</td>
-      <td class="muted-val">${fmt(bud26)}</td>
-    </tr>`;
+// ── CATEGORY CHART ────────────────────────────────────────────────────────────
+function buildCatChart(){
+  dc('catC');
+  const cats=CAT_CFG[ch]||[];
+  document.getElementById('chT').textContent=cats.length?`카테고리별 ${metric} 비교 (${ch} · ${yr})`:`채널별 GSV 연간 비교`;
+  if(!cats.length){
+    // Channel compare chart
+    const chs2=['B2C','B2B','AFS'];
+    const{actual,budget,ly}=getKeys();
+    const v=k=>chs2.map(c=>sumNZ(D[`${c}_GSV`]?.[k]||[]));
+    mkB('catC',chs2,[{label:yr==='2025'?'LY 2024':'LY 2025',data:v(ly),backgroundColor:'rgba(156,163,175,.5)',borderRadius:3},{label:`Budget ${yr}`,data:v(budget),backgroundColor:'rgba(245,158,11,.55)',borderRadius:3},{label:`Actual ${yr}`,data:v(actual),backgroundColor:'rgba(59,110,248,.8)',borderRadius:3},{label:yr==='2025'?'Budget 2026':'—',data:yr==='2025'?v('budget_2026'):[0,0,0],backgroundColor:'rgba(139,92,246,.5)',borderRadius:3}],v=>fmtN(v),true);
+    return;
   }
-
-  // Total row
-  const sumFmt = (arr) => isPct ? fmtPct(arr.reduce((a,b)=>a+b)/arr.length) : fmtM(arr.reduce((a,b)=>a+b));
-  const totalAct = isPct ? avg(d.actual_2025) : sum(d.actual_2025);
-  const totalBud = isPct ? avg(d.budget_2025) : sum(d.budget_2025);
-  const totalLY = isPct ? avg(d.ly_2024) : sum(d.ly_2024);
-  const totalBud26 = isPct ? avg(d.budget_2026) : sum(d.budget_2026);
-  const totalAvb = totalBud !== 0 ? ((totalAct - totalBud) / Math.abs(totalBud) * 100) : 0;
-  const totalAly = totalLY !== 0 ? ((totalAct - totalLY) / Math.abs(totalLY) * 100) : 0;
-  html += `<tr style="font-weight:700;background:rgba(79,142,247,0.06)">
-    <td>연간합계</td>
-    <td class="muted-val">${sumFmt(d.ly_2024)}</td>
-    <td class="muted-val">${sumFmt(d.budget_2025)}</td>
-    <td style="color:var(--blue)">${sumFmt(d.actual_2025)}</td>
-    <td class="${totalAvb >= 0 ? 'pos-val' : 'neg-val'}">${totalAvb >= 0 ? '+' : ''}${totalAvb.toFixed(1)}%</td>
-    <td class="${totalAly >= 0 ? 'pos-val' : 'neg-val'}">${totalAly >= 0 ? '+' : ''}${totalAly.toFixed(1)}%</td>
-    <td class="muted-val">${sumFmt(d.budget_2026)}</td>
-  </tr>`;
-
-  html += '</tbody>';
-  document.getElementById('dataTable').innerHTML = html;
+  const{actual,budget,ly}=getKeys();
+  const pct=isPct(metric);
+  const yF=v=>pct?v.toFixed(1)+'%':fmtN(v);
+  const lyD=cats.map(c=>{const k=`${CAT_KEYS[ch]?.[c]}_${metric}`;return k&&D[k]?agg(D[k][ly]||[],metric):0;});
+  const bD=cats.map(c=>{const k=`${CAT_KEYS[ch]?.[c]}_${metric}`;return k&&D[k]?agg(D[k][budget]||[],metric):0;});
+  const aD=cats.map(c=>{const k=`${CAT_KEYS[ch]?.[c]}_${metric}`;return k&&D[k]?agg(D[k][actual]||[],metric):0;});
+  mkB('catC',cats,[{label:yr==='2025'?'LY 2024':'LY 2025',data:lyD,backgroundColor:'rgba(156,163,175,.5)',borderRadius:3},{label:`Budget ${yr}`,data:bD,backgroundColor:'rgba(245,158,11,.55)',borderRadius:3},{label:`Actual ${yr}`,data:aD,backgroundColor:aD.map(v=>v>=0?'rgba(59,110,248,.8)':'rgba(239,68,68,.7)'),borderRadius:3}],yF,true);
 }
 
-// ─── RENDER ALL ──────────────────────────────────────────────────────────────
-function renderAll() {
-  buildKPIs();
-  buildTrendChart();
-  buildAvbChart();
-  buildGMPctChart();
-  buildChannelChart();
-  buildAchieveChart();
-  buildTable();
-  buildPieChart();
+// ── TABLE ──────────────────────────────────────────────────────────────────────
+function buildTable(){
+  const d=getData();
+  if(!d.actual_2025)return;
+  const{actual,budget,ly}=getKeys();
+  const pct=isPct(metric);
+  const fV=v=>pct?v.toFixed(2)+'%':fmtFull(v);
+  const lyLbl=yr==='2025'?'LY 2024':'LY 2025';
+  const title=cat==='Total'?`${ch} ${metric}`:`${cat} ${metric}`;
+  document.getElementById('tbT').textContent=`📋 ${title} — 월별 상세 (${yr})`;
+  let html=`<thead><tr><th>월</th><th>${lyLbl}</th><th>Budget ${yr}</th><th>Actual ${yr}</th><th>A vs Budget</th><th>A vs LY</th></tr></thead><tbody>`;
+  for(let i=0;i<12;i++){
+    const l=(d[ly]||[])[i]||0,b=(d[budget]||[])[i]||0,a=(d[actual]||[])[i]||0;
+    const isNull=a===0&&i>=3&&yr==='2026';
+    const avb=vsC(a,b),aly=vsC(a,l);
+    html+=`<tr><td>${MOS[i]}</td><td>${fV(l)}</td><td>${fV(b)}</td><td class="${isNull?'':'av'}">${isNull?'—':fV(a)}</td><td class="${isNull?'':avb>=0?'pv':'nv'}">${isNull?'—':(avb>=0?'+':'')+avb.toFixed(1)+'%'}</td><td class="${isNull?'':aly>=0?'pv':'nv'}">${isNull?'—':(aly>=0?'+':'')+aly.toFixed(1)+'%'}</td></tr>`;
+  }
+  const la=agg(d[ly]||[],metric),ba=agg(d[budget]||[],metric),aa=agg(d[actual]||[],metric);
+  const tavb=vsC(aa,ba),taly=vsC(aa,la);
+  html+=`<tr class="tr"><td>연간합계${pct?' (평균)':''}</td><td>${fV(la)}</td><td>${fV(ba)}</td><td>${fV(aa)}</td><td>${tavb>=0?'+':''}${tavb.toFixed(1)}%</td><td>${taly>=0?'+':''}${taly.toFixed(1)}%</td></tr></tbody>`;
+  document.getElementById('tbl').innerHTML=html;
 }
 
-// ─── CONTROLS ────────────────────────────────────────────────────────────────
-function setChannel(ch) {
-  currentChannel = ch;
-  document.querySelectorAll('.controls .tab-btn').forEach(b => {
-    if (['HVAC','B2C','B2B','AFS'].includes(b.textContent.trim().split(' ')[0])) b.classList.remove('active');
-  });
-  event.target.classList.add('active');
-  renderAll();
-}
-function setMetric(m) {
-  currentMetric = m;
-  document.querySelectorAll('.controls .tab-btn').forEach(b => {
-    if (['GSV','NSV','Gross Margin','GM%'].includes(b.textContent.trim())) b.classList.remove('active');
-  });
-  event.target.classList.add('active');
-  renderAll();
+// ── RENDER ─────────────────────────────────────────────────────────────────────
+function renderAll(){
+  buildCatBar();buildKPIs();buildTrend();buildPie();buildAvb();buildAchieve();
+  buildSmall('gC','gT','GM_PCT');buildSmall('sC','sT','SD_PCT');buildSmall('coC','coT','COGS_PCT');
+  buildCatChart();buildTable();
 }
 
-// ─── INIT ────────────────────────────────────────────────────────────────────
+// ── CONTROL HELPERS ────────────────────────────────────────────────────────────
+function setCh(v,el){ch=v;cat='Total';document.querySelectorAll('.ctrl:nth-child(1) .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
+function setM(v,el){metric=v;document.querySelectorAll('.ctrl:nth-child(2) .btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
+function setY(v,el){yr=v;document.querySelectorAll('.btn.yr').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAll();}
+
 renderAll();
 </script>
 </body>
