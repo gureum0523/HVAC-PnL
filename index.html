@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LG Electronics — Analytics Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c14;--surface:#0f1520;--surface2:#141c2a;
+  --border:#1e2d42;--text:#e8f0fe;--muted:#5a7a9e;--dim:#2d4a6b;
+  --accent:#4f8ef7;--accent2:#38d9a9;--accent3:#f7934f;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,142,247,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(79,142,247,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;filter:blur(120px);opacity:.18;pointer-events:none;z-index:0}
+.orb1{width:600px;height:600px;background:#4f8ef7;top:-200px;left:-150px}
+.orb2{width:500px;height:500px;background:#38d9a9;bottom:-150px;right:-100px}
+header{position:relative;z-index:10;padding:36px 48px 0;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,#4f8ef7,#38d9a9);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 0 24px rgba(79,142,247,.4)}
+.logo-text{font-size:1.05rem;font-weight:700;color:#e8f0fe}
+.logo-sub{font-size:.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px;letter-spacing:.04em}
+.header-right{display:flex;align-items:center;gap:10px;margin-top:4px}
+.badge{font-size:.65rem;font-weight:600;padding:4px 10px;border-radius:20px;font-family:'DM Mono',monospace;letter-spacing:.04em}
+.badge-blue{background:rgba(79,142,247,.15);color:#7ab3f9;border:1px solid rgba(79,142,247,.2)}
+.badge-green{background:rgba(56,217,169,.15);color:#6ee7b7;border:1px solid rgba(56,217,169,.2)}
+.hero{position:relative;z-index:10;padding:64px 48px 48px}
+.hero-label{font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-family:'DM Mono',monospace;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.hero-label::before{content:'';display:inline-block;width:20px;height:1px;background:var(--accent)}
+.hero h1{font-size:3rem;font-weight:700;line-height:1.1;letter-spacing:-.03em;color:#fff;max-width:600px}
+.hero h1 span{background:linear-gradient(90deg,#4f8ef7,#38d9a9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{margin-top:16px;font-size:.95rem;color:var(--muted);max-width:480px;line-height:1.7}
+.stats{display:flex;gap:32px;margin-top:24px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat-val{font-size:1.6rem;font-weight:700;letter-spacing:-.03em;color:#fff;font-family:'DM Mono',monospace}
+.stat-val span{font-size:1rem;color:var(--muted);font-weight:400}
+.stat-label{font-size:.68rem;color:var(--muted);letter-spacing:.04em}
+.section{position:relative;z-index:10;padding:0 48px 64px}
+.section-title{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:'DM Mono',monospace;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;cursor:pointer;text-decoration:none;color:inherit;display:block;position:relative;overflow:hidden;transition:transform .2s,border-color .2s,box-shadow .2s}
+.card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--cc1,#4f8ef7),var(--cc2,#38d9a9));opacity:0;transition:opacity .2s}
+.card:hover{transform:translateY(-4px);border-color:var(--ca,#4f8ef7);box-shadow:0 12px 40px rgba(0,0,0,.4),0 0 0 1px var(--ca,#4f8ef7)}
+.card:hover::before{opacity:.04}
+.card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:18px;position:relative}
+.card-tag{position:absolute;top:20px;right:20px;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px;font-family:'DM Mono',monospace}
+.card h3{font-size:1.05rem;font-weight:700;letter-spacing:-.01em;margin-bottom:6px;position:relative}
+.card p{font-size:.8rem;color:var(--muted);line-height:1.6;position:relative}
+.card-meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;position:relative}
+.card-meta-item{display:flex;flex-direction:column;gap:2px}
+.card-meta-label{font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);font-family:'DM Mono',monospace}
+.card-meta-val{font-size:.78rem;font-weight:600;color:var(--muted)}
+.card-arrow{position:absolute;bottom:24px;right:24px;width:28px;height:28px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--muted);transition:all .2s}
+.card:hover .card-arrow{background:var(--ca,#4f8ef7);color:#fff;transform:translate(2px,-2px)}
+/* themes */
+.c-hvac{--ca:#4f8ef7;--cc1:#4f8ef7;--cc2:#6366f1}
+.c-hvac .card-icon{background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.2)}
+.c-hvac .card-tag{background:rgba(79,142,247,.15);color:#7ab3f9}
+.c-teal{--ca:#38d9a9;--cc1:#38d9a9;--cc2:#06b6d4}
+.c-teal .card-icon{background:rgba(56,217,169,.12);border:1px solid rgba(56,217,169,.2)}
+.c-teal .card-tag{background:rgba(56,217,169,.15);color:#6ee7b7}
+.c-orange{--ca:#f7934f;--cc1:#f7934f;--cc2:#f59e0b}
+.c-orange .card-icon{background:rgba(247,147,79,.12);border:1px solid rgba(247,147,79,.2)}
+.c-orange .card-tag{background:rgba(247,147,79,.15);color:#fcd34d}
+.c-purple{--ca:#a78bfa;--cc1:#a78bfa;--cc2:#6366f1}
+.c-purple .card-icon{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2)}
+.c-purple .card-tag{background:rgba(167,139,250,.15);color:#c4b5fd}
+.c-dim{--ca:#5a7a9e;opacity:.45;cursor:not-allowed}
+.c-dim:hover{transform:none!important;box-shadow:none!important}
+.c-dim .card-icon{background:rgba(90,122,158,.1);border:1px solid rgba(90,122,158,.2)}
+.c-dim .card-tag{background:rgba(90,122,158,.15);color:#7a9ab8}
+footer{position:relative;z-index:10;padding:24px 48px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+footer p{font-size:.72rem;color:var(--dim)}
+.dot{width:6px;height:6px;border-radius:50%;background:#38d9a9;display:inline-block;margin-right:6px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero{animation:fadeUp .6s ease both}
+.section{animation:fadeUp .6s .15s ease both}
+.card{animation:fadeUp .5s ease both}
+.card:nth-child(1){animation-delay:.1s}.card:nth-child(2){animation-delay:.18s}
+.card:nth-child(3){animation-delay:.26s}.card:nth-child(4){animation-delay:.34s}
+@media(max-width:768px){
+  header,.hero,.section{padding-left:20px;padding-right:20px}
+  .hero h1{font-size:2rem}
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">LG Electronics</div>
+      <div class="logo-sub">Analytics Hub · H&A Division</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-green">● Live</span>
+    <span class="badge badge-blue">FY2025/2026</span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-label">Performance Dashboards</div>
+  <h1>Data-Driven<br><span>Business Intelligence</span></h1>
+  <p>채널별 손익 성과를 실시간으로 추적합니다.<br>Actual vs Budget vs Prior Year — 월별 · 분기별 · 연간</p>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val">4<span>개</span></div>
+      <div class="stat-label">채널 (HVAC · B2C · B2B · AFS)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">3<span>년</span></div>
+      <div class="stat-label">LY · Budget · Actual</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">17<span>+</span></div>
+      <div class="stat-label">핵심 지표</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">// 대시보드 목록</div>
+  <div class="grid">
+
+    <a href="HVAC_GPC_Dashboard.html" class="card c-hvac">
+      <span class="card-tag">HVAC · P&L</span>
+      <div class="card-icon">📊</div>
+      <h3>HVAC Performance Dashboard</h3>
+      <p>HVAC · B2C · B2B · AFS 채널별 GSV, SD%, NSV, COGS, INV, VSP, GM 월별 성과 분석. Official / Internal 비교 포함.</p>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <span class="card-meta-label">업데이트</span>
+          <span class="card-meta-val">Mar 2026</span>
+        </div>
+        <div class="card-meta-item">
+          <span class="card-meta-label">기준</span>
+          <span class="card-meta-val">Official · Internal</span>
+        </div>
+        <div class="card-meta-item">
+          <span class="card-meta-label">카테고리</span>
+          <span class="card-meta-val">22개</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a href="#" class="card c-teal c-dim" onclick="return false">
+      <span class="card-tag">준비 중</span>
+      <div class="card-icon">🌐</div>
+      <h3>Market Share Analysis</h3>
+      <p>글로벌 시장 점유율 및 경쟁사 대비 포지션 분석 대시보드</p>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <span class="card-meta-label">상태</span>
+          <span class="card-meta-val">Coming Soon</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a href="#" class="card c-orange c-dim" onclick="return false">
+      <span class="card-tag">준비 중</span>
+      <div class="card-icon">🔮</div>
+      <h3>Forecast & Scenario</h3>
+      <p>연간 목표 달성 시나리오 및 분기별 FCST 트래킹 대시보드</p>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <span class="card-meta-label">상태</span>
+          <span class="card-meta-val">Coming Soon</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+    <a href="#" class="card c-purple c-dim" onclick="return false">
+      <span class="card-tag">준비 중</span>
+      <div class="card-icon">📦</div>
+      <h3>Inventory & Supply Chain</h3>
+      <p>재고 회전율, 납기 현황, 공급망 리스크 모니터링 대시보드</p>
+      <div class="card-meta">
+        <div class="card-meta-item">
+          <span class="card-meta-label">상태</span>
+          <span class="card-meta-val">Coming Soon</span>
+        </div>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+  </div>
+</div>
+
+<footer>
+  <p><span class="dot"></span>LG Electronics H&A Division · Analytics Hub</p>
+  <p style="font-family:'DM Mono',monospace;font-size:.68rem">2026.03 · github.io</p>
+</footer>
+</body>
+</html>
