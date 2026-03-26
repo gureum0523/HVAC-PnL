@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGESR Profit Center Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d47;
+    --rac: #00d4ff;
+    --rac-dim: rgba(0,212,255,0.12);
+    --sac: #ff6b35;
+    --sac-dim: rgba(255,107,53,0.12);
+    --green: #00ff9d;
+    --red: #ff4560;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #7c3aed;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--rac), var(--accent));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: white;
+  }
+
+  .logo-text { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+  .logo-sub { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 4px;
+  }
+
+  .tab-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .tab-btn.active-rac {
+    background: var(--rac);
+    color: #000;
+  }
+  .tab-btn.active-sac {
+    background: var(--sac);
+    color: #fff;
+  }
+  .tab-btn.active-compare {
+    background: linear-gradient(90deg, var(--rac), var(--sac));
+    color: #fff;
+  }
+  .tab-btn.active-total {
+    background: linear-gradient(135deg, #7c3aed, #00d4ff, #ff6b35);
+    color: #fff;
+  }
+  .tab-btn:hover:not(.active-rac):not(.active-sac):not(.active-compare) {
+    color: var(--text);
+    background: var(--border);
+  }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .badge-rac { background: var(--rac-dim); color: var(--rac); border: 1px solid rgba(0,212,255,0.3); }
+  .badge-sac { background: var(--sac-dim); color: var(--sac); border: 1px solid rgba(255,107,53,0.3); }
+
+  .container { padding: 24px 32px; max-width: 1600px; margin: 0 auto; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .kpi-card:hover { border-color: #2e4068; }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .kpi-card.rac::before { background: var(--rac); }
+  .kpi-card.sac::before { background: var(--sac); }
+  .kpi-card.both::before { background: linear-gradient(90deg, var(--rac), var(--sac)); }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .delta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .delta.pos { color: var(--green); background: rgba(0,255,157,0.1); }
+  .delta.neg { color: var(--red); background: rgba(255,69,96,0.1); }
+
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .charts-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .charts-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chart-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .dot-rac { background: var(--rac); }
+  .dot-sac { background: var(--sac); }
+
+  canvas { width: 100% !important; }
+
+  .pl-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .pl-table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 10px 16px;
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  th:first-child { text-align: left; }
+
+  td {
+    padding: 9px 16px;
+    text-align: right;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    border-bottom: 1px solid rgba(30,45,71,0.5);
+  }
+
+  td:first-child {
+    text-align: left;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+  }
+
+  tr.total-row td {
+    font-weight: 700;
+    background: rgba(255,255,255,0.03);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr.section-row td {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 6px 16px;
+  }
+
+  .pos-val { color: var(--green); }
+  .neg-val { color: var(--red); }
+  .neutral-val { color: var(--text); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .divider-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 24px 0 16px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  .divider-label::before, .divider-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .trend-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  .year-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .year-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  .year-btn.active { border-color: var(--rac); color: var(--rac); }
+  .year-btn:hover:not(.active) { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">LG</div>
+    <div>
+      <div class="logo-text">LGESR Profit Center</div>
+      <div class="logo-sub">Factory P&L Dashboard · FY2024–2025</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active-rac" onclick="switchTab('rac')">RAC BD</button>
+    <button class="tab-btn" onclick="switchTab('sac')">SAC</button>
+    <button class="tab-btn" onclick="switchTab('compare')">RAC vs SAC</button>
+    <button class="tab-btn" onclick="switchTab('total')">Total (RAC+SAC)</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===== RAC TAB ===== -->
+<div id="tab-rac" class="tab-content active">
+  <div class="section-header">
+    <div class="badge badge-rac">RAC BD</div>
+    <div class="section-title">Room Air Conditioner · Business Division</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card rac">
+      <div class="kpi-label">YTD 2025 Gross Sales</div>
+      <div class="kpi-value" style="color:var(--rac)">$74.5M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $80.7M
+        <span class="delta neg">▼ -7.7%</span>
+      </div>
+    </div>
+    <div class="kpi-card rac">
+      <div class="kpi-label">YTD 2025 Net Sales</div>
+      <div class="kpi-value" style="color:var(--rac)">$69.3M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $75.5M
+        <span class="delta neg">▼ -8.2%</span>
+      </div>
+    </div>
+    <div class="kpi-card rac">
+      <div class="kpi-label">YTD 2025 Gross Profit</div>
+      <div class="kpi-value" style="color:#a78bfa">$9.5M</div>
+      <div class="kpi-sub">
+        GP% 12.7%
+        <span class="delta neg">▼ vs 15.8%</span>
+      </div>
+    </div>
+    <div class="kpi-card rac">
+      <div class="kpi-label">YTD 2025 Operating Income</div>
+      <div class="kpi-value" style="color:var(--green)">$4.3M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $3.2M
+        <span class="delta pos">▲ +34.2%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-rac"></span>Monthly Sales Trend</div>
+      <canvas id="rac-sales-chart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-rac"></span>Profitability Indicators</div>
+      <canvas id="rac-margin-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row-3">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-rac"></span>Domestic vs Export Sales</div>
+      <canvas id="rac-mix-chart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-rac"></span>Monthly Operating Income</div>
+      <canvas id="rac-oi-chart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-rac"></span>SG&A Breakdown (Selling vs Admin)</div>
+      <canvas id="rac-sga-chart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="pl-table-wrap">
+    <div class="pl-table-header">RAC BD · P&L Summary (USD)</div>
+    <table id="rac-pl-table">
+      <thead>
+        <tr>
+          <th style="min-width:200px">Item</th>
+          <th>Jan-25</th><th>Feb-25</th><th>Mar-25</th><th>Apr-25</th><th>May-25</th><th>Jun-25</th>
+          <th>Jul-25</th><th>Aug-25</th><th>Sep-25</th><th>Oct-25</th><th>Nov-25</th><th>Dec-25</th>
+          <th style="background:rgba(0,212,255,0.08)">YTD 2025</th>
+          <th>YTD 2024</th>
+          <th>vs PY</th>
+        </tr>
+      </thead>
+      <tbody id="rac-pl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== SAC TAB ===== -->
+<div id="tab-sac" class="tab-content">
+  <div class="section-header">
+    <div class="badge badge-sac">SAC</div>
+    <div class="section-title">System Air Conditioner</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card sac">
+      <div class="kpi-label">YTD 2025 Gross Sales</div>
+      <div class="kpi-value" style="color:var(--sac)">$114.1M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $110.8M
+        <span class="delta pos">▲ +3.0%</span>
+      </div>
+    </div>
+    <div class="kpi-card sac">
+      <div class="kpi-label">YTD 2025 Net Sales</div>
+      <div class="kpi-value" style="color:var(--sac)">$111.6M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $108.0M
+        <span class="delta pos">▲ +3.4%</span>
+      </div>
+    </div>
+    <div class="kpi-card sac">
+      <div class="kpi-label">YTD 2025 Gross Profit</div>
+      <div class="kpi-value" style="color:#fbbf24">$30.5M</div>
+      <div class="kpi-sub">
+        GP% 26.5%
+        <span class="delta pos">▲ vs 27.6%</span>
+      </div>
+    </div>
+    <div class="kpi-card sac">
+      <div class="kpi-label">YTD 2025 Operating Income</div>
+      <div class="kpi-value" style="color:var(--red)">$14.0M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $17.4M
+        <span class="delta neg">▼ -19.5%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-sac"></span>Monthly Sales Trend</div>
+      <canvas id="sac-sales-chart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-sac"></span>Profitability Indicators</div>
+      <canvas id="sac-margin-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row-3">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-sac"></span>Domestic vs Export Sales</div>
+      <canvas id="sac-mix-chart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-sac"></span>Monthly Operating Income</div>
+      <canvas id="sac-oi-chart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-sac"></span>SG&A Breakdown</div>
+      <canvas id="sac-sga-chart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="pl-table-wrap">
+    <div class="pl-table-header">SAC · P&L Summary (USD)</div>
+    <table id="sac-pl-table">
+      <thead>
+        <tr>
+          <th style="min-width:200px">Item</th>
+          <th>Jan-25</th><th>Feb-25</th><th>Mar-25</th><th>Apr-25</th><th>May-25</th><th>Jun-25</th>
+          <th>Jul-25</th><th>Aug-25</th><th>Sep-25</th><th>Oct-25</th><th>Nov-25</th><th>Dec-25</th>
+          <th style="background:rgba(255,107,53,0.08)">YTD 2025</th>
+          <th>YTD 2024</th>
+          <th>vs PY</th>
+        </tr>
+      </thead>
+      <tbody id="sac-pl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== COMPARE TAB ===== -->
+<div id="tab-compare" class="tab-content">
+  <div class="section-header">
+    <div class="section-title">RAC BD vs SAC · Comparative Analysis</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card both">
+      <div class="kpi-label">RAC Sales Share</div>
+      <div class="kpi-value">39.5%</div>
+      <div class="kpi-sub" style="color:var(--rac)">$74.5M / $188.6M Total</div>
+    </div>
+    <div class="kpi-card both">
+      <div class="kpi-label">SAC Sales Share</div>
+      <div class="kpi-value">60.5%</div>
+      <div class="kpi-sub" style="color:var(--sac)">$114.1M / $188.6M Total</div>
+    </div>
+    <div class="kpi-card both">
+      <div class="kpi-label">RAC OI% (YTD 2025)</div>
+      <div class="kpi-value" style="color:var(--green)">5.7%</div>
+      <div class="kpi-sub">vs 2024 4.0% <span class="delta pos">▲ +1.7pp</span></div>
+    </div>
+    <div class="kpi-card both">
+      <div class="kpi-label">SAC OI% (YTD 2025)</div>
+      <div class="kpi-value" style="color:var(--red)">12.3%</div>
+      <div class="kpi-sub">vs 2024 15.7% <span class="delta neg">▼ -3.4pp</span></div>
+    </div>
+  </div>
+
+  <div class="charts-row-2">
+    <div class="chart-card">
+      <div class="chart-title">Monthly Sales Comparison</div>
+      <canvas id="compare-sales-chart" height="250"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Monthly OI% Comparison</div>
+      <canvas id="compare-oi-rate-chart" height="250"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row-2">
+    <div class="chart-card">
+      <div class="chart-title">Gross Profit Comparison</div>
+      <canvas id="compare-gp-chart" height="250"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Gross Profit % Comparison</div>
+      <canvas id="compare-gp-rate-chart" height="250"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-title">YTD P&L Waterfall Comparison (RAC vs SAC)</div>
+    <canvas id="compare-waterfall-chart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- ===== TOTAL TAB ===== -->
+<div id="tab-total" class="tab-content">
+  <div class="section-header">
+    <div class="badge" style="background:rgba(124,58,237,0.15);color:#a78bfa;border:1px solid rgba(124,58,237,0.3)">TOTAL</div>
+    <div class="section-title">LGESR Total · RAC BD + SAC Combined</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card both">
+      <div class="kpi-label">YTD 2025 Combined Gross Sales</div>
+      <div class="kpi-value" style="color:#a78bfa">$188.6M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $191.5M
+        <span class="delta neg">▼ -1.5%</span>
+      </div>
+    </div>
+    <div class="kpi-card both">
+      <div class="kpi-label">YTD 2025 Combined Net Sales</div>
+      <div class="kpi-value" style="color:#a78bfa">$180.9M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $183.6M
+        <span class="delta neg">▼ -1.5%</span>
+      </div>
+    </div>
+    <div class="kpi-card both">
+      <div class="kpi-label">YTD 2025 Combined Gross Profit</div>
+      <div class="kpi-value" style="color:#fbbf24">$39.9M</div>
+      <div class="kpi-sub">
+        GP% 21.1%
+        <span class="delta neg">▼ vs 22.6%</span>
+      </div>
+    </div>
+    <div class="kpi-card both">
+      <div class="kpi-label">YTD 2025 Combined Operating Income</div>
+      <div class="kpi-value" style="color:var(--green)">$18.3M</div>
+      <div class="kpi-sub">
+        vs 2024 YTD $20.6M
+        <span class="delta neg">▼ -11.5%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales contribution mini KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+    <div class="kpi-card rac" style="padding:14px 18px;">
+      <div class="kpi-label">RAC Sales Contribution</div>
+      <div style="font-size:20px;font-weight:700;color:var(--rac);font-family:'IBM Plex Mono',monospace;">39.5%</div>
+      <div class="kpi-sub">$74.5M</div>
+    </div>
+    <div class="kpi-card sac" style="padding:14px 18px;">
+      <div class="kpi-label">SAC Sales Contribution</div>
+      <div style="font-size:20px;font-weight:700;color:var(--sac);font-family:'IBM Plex Mono',monospace;">60.5%</div>
+      <div class="kpi-sub">$114.1M</div>
+    </div>
+    <div class="kpi-card rac" style="padding:14px 18px;">
+      <div class="kpi-label">RAC OI Contribution</div>
+      <div style="font-size:20px;font-weight:700;color:var(--rac);font-family:'IBM Plex Mono',monospace;">23.4%</div>
+      <div class="kpi-sub">$4.3M / $18.3M</div>
+    </div>
+    <div class="kpi-card sac" style="padding:14px 18px;">
+      <div class="kpi-label">SAC OI Contribution</div>
+      <div style="font-size:20px;font-weight:700;color:var(--sac);font-family:'IBM Plex Mono',monospace;">76.6%</div>
+      <div class="kpi-sub">$14.0M / $18.3M</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Combined Monthly Sales Trend (2024 vs 2025)</div>
+      <canvas id="total-sales-chart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">RAC / SAC Sales Mix (2025 Monthly)</div>
+      <canvas id="total-mix-chart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-row-3">
+    <div class="chart-card">
+      <div class="chart-title">Combined GP & GP% Trend</div>
+      <canvas id="total-gp-chart" height="210"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Combined Operating Income (2024 vs 2025)</div>
+      <canvas id="total-oi-chart" height="210"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Combined OI% Trend</div>
+      <canvas id="total-oi-rate-chart" height="210"></canvas>
+    </div>
+  </div>
+
+  <div class="pl-table-wrap">
+    <div class="pl-table-header" style="display:flex;align-items:center;gap:10px;">
+      <span>LGESR Total (RAC + SAC) · Combined P&L Summary (USD)</span>
+      <span class="badge" style="background:rgba(124,58,237,0.15);color:#a78bfa;border:1px solid rgba(124,58,237,0.3);font-size:10px;">RAC BD + SAC</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="min-width:220px">Item</th>
+          <th>Jan-25</th><th>Feb-25</th><th>Mar-25</th><th>Apr-25</th><th>May-25</th><th>Jun-25</th>
+          <th>Jul-25</th><th>Aug-25</th><th>Sep-25</th><th>Oct-25</th><th>Nov-25</th><th>Dec-25</th>
+          <th style="background:rgba(124,58,237,0.1)">YTD 2025</th>
+          <th>YTD 2024</th>
+          <th>vs PY</th>
+        </tr>
+      </thead>
+      <tbody id="total-pl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const DATA = {
+  RAC: {
+    sales: {
+      m24: [8542349,9864404,7962233,8133627,5021686,5747840,5053886,5506386,10040526,8073518,3946284,2781134],
+      m25: [11664626,8846036,7218583,10715525,8389266,5127080,3063329,4503745,4914000,4502922,1479823,4029221],
+      ytd24: 80673874, ytd25: 74454157
+    },
+    sales_domestic: {
+      m24: [7726997,5827525,5920018,5346083,4638342,5699232,4348229,5255836,9385783,6910744,3273144,1860579],
+      m25: [9586789,8337243,5251631,7818456,8109358,4794703,2824848,3507743,3586986,2360814,833808,1626621],
+      ytd24: 66192510, ytd25: 58639001
+    },
+    sales_export: {
+      m24: [815353,4036878,2042216,2787544,383345,48608,705657,250550,654743,1162774,673140,920555],
+      m25: [2077837,508793,1966953,2897069,279908,332377,238481,996003,1327014,2142108,646015,2402599],
+      ytd24: 14481364, ytd25: 15815156
+    },
+    net_sales: {
+      m24: [7976988,9502144,7323880,7763976,4795645,6331347,4381851,5317717,8026203,7634475,3780909,2696540],
+      m25: [10748320,8311129,6452691,10190393,7638346,4834387,2923533,4171983,4613531,4266444,1595069,3600705],
+      ytd24: 75531676, ytd25: 69346527
+    },
+    cogs: {
+      m24: [6793607,8097677,6017233,6210171,3997590,4650644,3998786,4723186,8294674,6858499,3347462,2272378],
+      m25: [9387030,7210618,5256285,7853089,5984043,3823129,2351152,3171723,3930596,3546874,1346637,2940776],
+      ytd24: 65261906, ytd25: 56801953
+    },
+    gross_profit: {
+      m24: [1183342,1766466,1946000,1923455,1024095,1680703,1055100,782531,1745852,1215019,599447,509156],
+      m25: [1331689,1022926,1105954,2291538,1634823,924886,463314,978238,612662,695920,223014,608794],
+      ytd24: 12763830, ytd25: 9491505
+    },
+    gross_profit_rate: {
+      m24: [0.1385,0.1789,0.2444,0.2365,0.2038,0.2923,0.2087,0.1421,0.1738,0.1505,0.152,0.1833],
+      m25: [0.1142,0.1156,0.1532,0.2139,0.1949,0.1804,0.1512,0.2172,0.1247,0.1545,0.1507,0.1511]
+    },
+    sga: {
+      m24: [710024,680563,740280,686491,437093,598891,504048,431803,797726,694682,362133,271261],
+      m25: [876978,639048,527350,1059060,662082,427399,460178,545059,563007,696527,388803,560580]
+    },
+    sga_selling: {
+      m24: [387890,375110,402100,376300,244500,326800,278900,237900,432300,379600,199200,150000],
+      m25: [484300,355200,295800,584100,369500,236500,255800,300600,311500,383900,215700,309400]
+    },
+    sga_admin: {
+      m24: [180000,168000,187000,172000,112000,152000,127000,109000,202000,176000,91000,73000],
+      m25: [222000,161000,133000,268000,167000,108000,116000,138000,141000,173000,98000,140000]
+    },
+    operating_income: {
+      m24: [697808,1247481,1294813,1318174,656965,1126816,573104,340808,967938,568133,230073,225456],
+      m25: [697808,383878,398604,1379296,1113481,261487,3756,529179,51538,-22919,-232749,48214],
+      ytd24: 3185743, ytd25: 4273832
+    },
+    oi_rate: {
+      m24: [0.0817,0.1265,0.1626,0.1621,0.1308,0.1959,0.1134,0.0619,0.0964,0.0704,0.0583,0.0811],
+      m25: [0.0598,0.0471,0.0552,0.1289,0.1327,0.0509,0.0012,0.1170,0.0105,-0.0051,-0.1574,0.0118]
+    }
+  },
+  SAC: {
+    sales: {
+      m24: [12025111,8961710,11972738,12217343,12695869,9950671,5996999,7537055,9237545,7537105,6853882,5854111],
+      m25: [15587498,13714287,15471948,10525165,9968661,10850791,6572516,8287895,8310300,6530725,6208351,2094739],
+      ytd24: 110840142, ytd25: 114122875
+    },
+    sales_domestic: {
+      m24: [9380059,7913113,9289760,7521897,8829923,7299660,4538232,6149808,7818507,6415977,5806980,4335661],
+      m25: [12075884,11047743,12203393,9540895,9027349,8358107,5708151,6325249,5632633,4883746,5025401,1247450],
+      ytd24: 85299576, ytd25: 91075993
+    },
+    sales_export: {
+      m24: [2645054,1048597,2682981,4695444,3865945,2651010,1458768,1387247,1419039,1121128,1046902,1518450],
+      m25: [3511617,2666550,3268559,984269,941311,2492680,864366,1962646,2677667,1646978,1182950,847289],
+      ytd24: 25540566, ytd25: 23046882
+    },
+    net_sales: {
+      m24: [11659182,8631592,11813113,11914953,12337420,10110373,5966467,7502756,8802064,7018244,6638647,5570234],
+      m25: [15050186,13234148,15000117,10166493,9808239,10559335,6392155,8061550,8226308,6590797,6312113,2201471],
+      ytd24: 107965037, ytd25: 111602916
+    },
+    cogs: {
+      m24: [8826029,6265147,8149303,9007728,9073484,7262080,4932048,5430952,6260372,5372271,4940943,4778338],
+      m25: [11434914,9810321,11021344,7129262,7348437,8281200,4739343,6587720,6033545,5170861,4825040,1596916],
+      ytd24: 80298693, ytd25: 83978895
+    },
+    gross_profit: {
+      m24: [3199153,2366544,3623435,3209615,3621937,2848291,1064951,2106103,2541192,2164834,1912939,1075773],
+      m25: [3615282,3423685,3973650,3037225,2457816,2191596,1577793,1469493,2184094,1413095,1486602,604062],
+      ytd24: 30734720, ytd25: 30434393
+    },
+    gross_profit_rate: {
+      m24: [0.2661,0.2640,0.3025,0.2627,0.2852,0.2864,0.1775,0.2795,0.2750,0.2873,0.2791,0.1838],
+      m25: [0.2319,0.2496,0.2568,0.2886,0.2466,0.2020,0.2401,0.1773,0.2628,0.2164,0.2395,0.2884]
+    },
+    sga: {
+      m24: [1385620,1054280,1234560,1201045,1095940,889480,629050,818352,998273,917482,794102,613281],
+      m25: [1736900,1424680,1556700,1395800,1168700,1086500,850900,1083200,1076900,985700,992400,464700]
+    },
+    sga_selling: {
+      m24: [840000,643000,752000,730000,667000,541000,385000,499000,609000,562000,487000,377000],
+      m25: [1054300,866000,946200,848100,708600,660100,519600,659300,654300,599900,606900,284200]
+    },
+    sga_admin: {
+      m24: [387000,296000,347000,337000,308000,250000,178000,230000,281000,259000,224000,173000],
+      m25: [486000,400000,438000,392000,327000,305000,240000,305000,303000,277000,280000,132000]
+    },
+    operating_income: {
+      m24: [1894749,1365419,2434851,2061773,2580505,1985218,462399,1269201,1563551,1274640,1140985,489590],
+      m25: [1949100,2032880,2752350,2147430,1117020,598300,879940,331480,1153940,506640,767440,-64721],
+      ytd24: 17376750, ytd25: 13993075
+    },
+    oi_rate: {
+      m24: [0.1576,0.1524,0.2033,0.1688,0.2033,0.1995,0.0771,0.1684,0.1693,0.1691,0.1665,0.0837],
+      m25: [0.1252,0.1482,0.1831,0.2111,0.1136,0.0551,0.1337,0.0400,0.1405,0.0775,0.1239,-0.0309]
+    }
+  }
+};
+
+function fmt(v, decimals=0) {
+  if (v === null || v === undefined || isNaN(v)) return '-';
+  const m = Math.abs(v);
+  if (m >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (m >= 1e3) return (v/1e3).toFixed(0) + 'K';
+  return v.toFixed(decimals);
+}
+
+function fmtPct(v) {
+  if (v === null || isNaN(v)) return '-';
+  return (v*100).toFixed(1) + '%';
+}
+
+function colorClass(v) {
+  if (v > 0) return 'pos-val';
+  if (v < 0) return 'neg-val';
+  return 'neutral-val';
+}
+
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: {
+      labels: { color: '#94a3b8', font: { family: 'IBM Plex Sans', size: 11 }, boxWidth: 10, padding: 14 }
+    },
+    tooltip: {
+      backgroundColor: '#1a2235',
+      borderColor: '#1e2d47',
+      borderWidth: 1,
+      titleColor: '#e2e8f0',
+      bodyColor: '#94a3b8',
+      padding: 10
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#64748b', font: { size: 10 } },
+      grid: { color: 'rgba(30,45,71,0.6)' }
+    },
+    y: {
+      ticks: { color: '#64748b', font: { size: 10 } },
+      grid: { color: 'rgba(30,45,71,0.6)' }
+    }
+  }
+};
+
+function deepMerge(target, source) {
+  const result = Object.assign({}, target);
+  for (const key in source) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(target[key] || {}, source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+// ===== RAC CHARTS =====
+function buildRacCharts() {
+  const R = DATA.RAC;
+
+  // Sales trend
+  new Chart(document.getElementById('rac-sales-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: '2024', data: R.sales.m24, backgroundColor: 'rgba(0,212,255,0.25)', borderColor: 'rgba(0,212,255,0.6)', borderWidth: 1.5, borderRadius: 4 },
+        { label: '2025', data: R.sales.m25, backgroundColor: 'rgba(0,212,255,0.55)', borderColor: '#00d4ff', borderWidth: 1.5, borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      plugins: { legend: {} },
+      scales: {
+        y: { ticks: { callback: v => '$'+fmt(v) } }
+      }
+    })
+  });
+
+  // Margin trend
+  new Chart(document.getElementById('rac-margin-chart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'GP% 2024', data: R.gross_profit_rate.m24.map(v=>v*100), borderColor: 'rgba(0,212,255,0.5)', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3 },
+        { label: 'GP% 2025', data: R.gross_profit_rate.m25.map(v=>v*100), borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.1)', fill: true, tension: 0.4, pointRadius: 3 },
+        { label: 'OI% 2025', data: R.oi_rate.m25.map(v=>v*100), borderColor: '#00ff9d', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, borderDash: [4,3] }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => v.toFixed(1)+'%' } } }
+    })
+  });
+
+  // Dom vs Export mix (stacked)
+  new Chart(document.getElementById('rac-mix-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'Domestic', data: R.sales_domestic.m25, backgroundColor: 'rgba(0,212,255,0.6)', borderRadius: 4 },
+        { label: 'Export', data: R.sales_export.m25, backgroundColor: 'rgba(124,58,237,0.6)', borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, ticks: { callback: v => '$'+fmt(v) } }
+      }
+    })
+  });
+
+  // OI monthly
+  new Chart(document.getElementById('rac-oi-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'OI 2024', data: R.operating_income.m24, backgroundColor: 'rgba(0,212,255,0.2)', borderColor: 'rgba(0,212,255,0.4)', borderWidth: 1, borderRadius: 4 },
+        { label: 'OI 2025', data: R.operating_income.m25, backgroundColor: R.operating_income.m25.map(v => v >= 0 ? 'rgba(0,255,157,0.6)' : 'rgba(255,69,96,0.6)'), borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  // SG&A donut
+  const sgaTotals = [
+    R.sga_selling.m25.reduce((a,b)=>a+b,0),
+    R.sga_admin.m25.reduce((a,b)=>a+b,0)
+  ];
+  new Chart(document.getElementById('rac-sga-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Selling Exp', 'Admin Exp'],
+      datasets: [{ data: sgaTotals, backgroundColor: ['rgba(0,212,255,0.7)', 'rgba(124,58,237,0.7)'], borderColor: '#0a0e1a', borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => '$' + fmt(ctx.parsed) } }
+      }
+    }
+  });
+}
+
+// ===== SAC CHARTS =====
+function buildSacCharts() {
+  const S = DATA.SAC;
+
+  new Chart(document.getElementById('sac-sales-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: '2024', data: S.sales.m24, backgroundColor: 'rgba(255,107,53,0.25)', borderColor: 'rgba(255,107,53,0.6)', borderWidth: 1.5, borderRadius: 4 },
+        { label: '2025', data: S.sales.m25, backgroundColor: 'rgba(255,107,53,0.55)', borderColor: '#ff6b35', borderWidth: 1.5, borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  new Chart(document.getElementById('sac-margin-chart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'GP% 2024', data: S.gross_profit_rate.m24.map(v=>v*100), borderColor: 'rgba(255,107,53,0.5)', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3 },
+        { label: 'GP% 2025', data: S.gross_profit_rate.m25.map(v=>v*100), borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,0.1)', fill: true, tension: 0.4, pointRadius: 3 },
+        { label: 'OI% 2025', data: S.oi_rate.m25.map(v=>v*100), borderColor: '#fbbf24', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, borderDash: [4,3] }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => v.toFixed(1)+'%' } } }
+    })
+  });
+
+  new Chart(document.getElementById('sac-mix-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'Domestic', data: S.sales_domestic.m25, backgroundColor: 'rgba(255,107,53,0.6)', borderRadius: 4 },
+        { label: 'Export', data: S.sales_export.m25, backgroundColor: 'rgba(251,191,36,0.6)', borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  new Chart(document.getElementById('sac-oi-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'OI 2024', data: S.operating_income.m24, backgroundColor: 'rgba(255,107,53,0.2)', borderColor: 'rgba(255,107,53,0.4)', borderWidth: 1, borderRadius: 4 },
+        { label: 'OI 2025', data: S.operating_income.m25, backgroundColor: S.operating_income.m25.map(v => v >= 0 ? 'rgba(0,255,157,0.6)' : 'rgba(255,69,96,0.6)'), borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  const sgaTotals = [
+    S.sga_selling.m25.reduce((a,b)=>a+b,0),
+    S.sga_admin.m25.reduce((a,b)=>a+b,0)
+  ];
+  new Chart(document.getElementById('sac-sga-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Selling Exp', 'Admin Exp'],
+      datasets: [{ data: sgaTotals, backgroundColor: ['rgba(255,107,53,0.7)', 'rgba(251,191,36,0.7)'], borderColor: '#0a0e1a', borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+        tooltip: { callbacks: { label: ctx => '$' + fmt(ctx.parsed) } }
+      }
+    }
+  });
+}
+
+// ===== COMPARE CHARTS =====
+function buildCompareCharts() {
+  const R = DATA.RAC, S = DATA.SAC;
+
+  new Chart(document.getElementById('compare-sales-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'RAC 2024', data: R.sales.m24, backgroundColor: 'rgba(0,212,255,0.2)', borderRadius: 4 },
+        { label: 'RAC 2025', data: R.sales.m25, backgroundColor: 'rgba(0,212,255,0.6)', borderRadius: 4 },
+        { label: 'SAC 2024', data: S.sales.m24, backgroundColor: 'rgba(255,107,53,0.2)', borderRadius: 4 },
+        { label: 'SAC 2025', data: S.sales.m25, backgroundColor: 'rgba(255,107,53,0.6)', borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  new Chart(document.getElementById('compare-oi-rate-chart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'RAC OI% 2024', data: R.oi_rate.m24.map(v=>v*100), borderColor: 'rgba(0,212,255,0.4)', tension: 0.4, pointRadius: 3, borderDash: [5,3] },
+        { label: 'RAC OI% 2025', data: R.oi_rate.m25.map(v=>v*100), borderColor: '#00d4ff', tension: 0.4, pointRadius: 3 },
+        { label: 'SAC OI% 2024', data: S.oi_rate.m24.map(v=>v*100), borderColor: 'rgba(255,107,53,0.4)', tension: 0.4, pointRadius: 3, borderDash: [5,3] },
+        { label: 'SAC OI% 2025', data: S.oi_rate.m25.map(v=>v*100), borderColor: '#ff6b35', tension: 0.4, pointRadius: 3 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => v.toFixed(1)+'%' } } }
+    })
+  });
+
+  new Chart(document.getElementById('compare-gp-chart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'RAC GP 2025', data: R.gross_profit.m25, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.08)', fill: true, tension: 0.4 },
+        { label: 'SAC GP 2025', data: S.gross_profit.m25, borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,0.08)', fill: true, tension: 0.4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  new Chart(document.getElementById('compare-gp-rate-chart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'RAC GP% 2024', data: R.gross_profit_rate.m24.map(v=>v*100), borderColor: 'rgba(0,212,255,0.4)', tension: 0.4, borderDash: [5,3] },
+        { label: 'RAC GP% 2025', data: R.gross_profit_rate.m25.map(v=>v*100), borderColor: '#00d4ff', tension: 0.4 },
+        { label: 'SAC GP% 2024', data: S.gross_profit_rate.m24.map(v=>v*100), borderColor: 'rgba(255,107,53,0.4)', tension: 0.4, borderDash: [5,3] },
+        { label: 'SAC GP% 2025', data: S.gross_profit_rate.m25.map(v=>v*100), borderColor: '#ff6b35', tension: 0.4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => v.toFixed(1)+'%' } } }
+    })
+  });
+
+  // Waterfall: RAC vs SAC YTD 2025
+  const racItems = [R.sales.ytd25, -R.cogs.ytd25, -(R.sga.m25.reduce((a,b)=>a+b,0)), R.operating_income.ytd25];
+  const sacItems = [S.sales.ytd25, -S.cogs.ytd25, -(S.sga.m25.reduce((a,b)=>a+b,0)), S.operating_income.ytd25];
+  new Chart(document.getElementById('compare-waterfall-chart'), {
+    type: 'bar',
+    data: {
+      labels: ['Gross Sales', 'COGS (neg)', 'SG&A (neg)', 'Operating Income'],
+      datasets: [
+        { label: 'RAC 2025', data: racItems, backgroundColor: ['rgba(0,212,255,0.6)','rgba(255,69,96,0.5)','rgba(255,69,96,0.3)','rgba(0,255,157,0.6)'], borderRadius: 6 },
+        { label: 'SAC 2025', data: sacItems, backgroundColor: ['rgba(255,107,53,0.6)','rgba(255,165,0,0.5)','rgba(255,165,0,0.3)','rgba(0,255,157,0.8)'], borderRadius: 6 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+}
+
+// ===== P&L TABLES =====
+function buildPLTable(tbodyId, div) {
+  const D = DATA[div];
+  const tbody = document.getElementById(tbodyId);
+  
+  const items = [
+    { label: '① Gross Sales', data: D.sales.m25, ytd25: D.sales.ytd25, ytd24: D.sales.ytd24, cls: 'total-row', isRate: false },
+    { label: '  – Domestic', data: D.sales_domestic.m25, ytd25: D.sales_domestic.ytd25, ytd24: D.sales_domestic.ytd24, isRate: false },
+    { label: '  – Export', data: D.sales_export.m25, ytd25: D.sales_export.ytd25, ytd24: D.sales_export.ytd24, isRate: false },
+    { label: '② Net Sales', data: D.net_sales.m25, ytd25: D.net_sales.ytd25, ytd24: D.net_sales.ytd24, cls: 'total-row', isRate: false },
+    { label: '③ COGS', data: D.cogs.m25, ytd25: D.cogs.ytd25, ytd24: D.cogs.ytd24, cls: 'total-row', isRate: false, neg: true },
+    { label: '④ Gross Profit', data: D.gross_profit.m25, ytd25: D.gross_profit.ytd25, ytd24: D.gross_profit.ytd24, cls: 'total-row', isRate: false },
+    { label: '  GP%', data: D.gross_profit_rate.m25, ytd25: D.gross_profit.ytd25/D.sales.ytd25, ytd24: D.gross_profit.ytd24/D.sales.ytd24, isRate: true },
+    { label: '⑤ SG&A', data: D.sga.m25, ytd25: D.sga.m25.reduce((a,b)=>a+b,0), ytd24: D.sga.m24.reduce((a,b)=>a+b,0), cls: 'total-row', isRate: false, neg: true },
+    { label: '  – Selling', data: D.sga_selling.m25, ytd25: D.sga_selling.m25.reduce((a,b)=>a+b,0), ytd24: D.sga_selling.m24.reduce((a,b)=>a+b,0), isRate: false, neg: true },
+    { label: '  – Admin', data: D.sga_admin.m25, ytd25: D.sga_admin.m25.reduce((a,b)=>a+b,0), ytd24: D.sga_admin.m24.reduce((a,b)=>a+b,0), isRate: false, neg: true },
+    { label: '⑥ Operating Income', data: D.operating_income.m25, ytd25: D.operating_income.ytd25, ytd24: D.operating_income.ytd24, cls: 'total-row', isRate: false },
+    { label: '  OI%', data: D.oi_rate.m25, ytd25: D.operating_income.ytd25/D.sales.ytd25, ytd24: D.operating_income.ytd24/D.sales.ytd24, isRate: true }
+  ];
+
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    if (item.cls) tr.className = item.cls;
+    
+    let rowHtml = `<td>${item.label}</td>`;
+    item.data.forEach((v, i) => {
+      const fmt_v = item.isRate ? fmtPct(v) : ('$' + fmt(v));
+      const cls = item.isRate ? '' : (item.neg ? 'neg-val' : (v < 0 ? 'neg-val' : ''));
+      rowHtml += `<td class="${cls}">${fmt_v}</td>`;
+    });
+    
+    // YTD 2025
+    const ytd25_fmt = item.isRate ? fmtPct(item.ytd25) : ('$' + fmt(item.ytd25));
+    rowHtml += `<td style="font-weight:700;${!item.isRate && item.ytd25 >= 0 ? 'color:var(--rac)' : ''}">${ytd25_fmt}</td>`;
+    
+    // YTD 2024
+    const ytd24_fmt = item.isRate ? fmtPct(item.ytd24) : ('$' + fmt(item.ytd24));
+    rowHtml += `<td>${ytd24_fmt}</td>`;
+    
+    // vs PY
+    let vsPY = '';
+    if (!item.isRate && item.ytd24 !== 0) {
+      const chg = (item.ytd25 - item.ytd24) / Math.abs(item.ytd24);
+      const cls = chg >= 0 ? 'pos-val' : 'neg-val';
+      vsPY = `<td class="${cls}">${(chg*100).toFixed(1)}%</td>`;
+    } else if (item.isRate) {
+      const diff = item.ytd25 - item.ytd24;
+      const cls = diff >= 0 ? 'pos-val' : 'neg-val';
+      vsPY = `<td class="${cls}">${(diff*100).toFixed(1)}pp</td>`;
+    } else {
+      vsPY = `<td>-</td>`;
+    }
+    rowHtml += vsPY;
+    
+    tr.innerHTML = rowHtml;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== TOTAL CHARTS =====
+function buildTotalCharts() {
+  const R = DATA.RAC, S = DATA.SAC;
+
+  // Sum arrays
+  const sum = (a, b) => a.map((v, i) => v + b[i]);
+
+  const totalSales24 = sum(R.sales.m24, S.sales.m24);
+  const totalSales25 = sum(R.sales.m25, S.sales.m25);
+  const totalNetSales25 = sum(R.net_sales.m25, S.net_sales.m25);
+  const totalCogs25 = sum(R.cogs.m25, S.cogs.m25);
+  const totalGP24 = sum(R.gross_profit.m24, S.gross_profit.m24);
+  const totalGP25 = sum(R.gross_profit.m25, S.gross_profit.m25);
+  const totalOI24 = sum(R.operating_income.m24, S.operating_income.m24);
+  const totalOI25 = sum(R.operating_income.m25, S.operating_income.m25);
+  const totalSGA25 = sum(R.sga.m25, S.sga.m25);
+  const totalSGA24 = sum(R.sga.m24, S.sga.m24);
+
+  const totalGPRate25 = totalGP25.map((v, i) => totalSales25[i] ? v / totalSales25[i] : 0);
+  const totalOIRate25 = totalOI25.map((v, i) => totalSales25[i] ? v / totalSales25[i] : 0);
+  const totalOIRate24 = totalOI24.map((v, i) => totalSales24[i] ? v / totalSales24[i] : 0);
+
+  // Sales trend: stacked RAC+SAC
+  new Chart(document.getElementById('total-sales-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'Total 2024', data: totalSales24, backgroundColor: 'rgba(124,58,237,0.25)', borderColor: 'rgba(124,58,237,0.6)', borderWidth: 1.5, borderRadius: 4 },
+        { label: 'Total 2025', data: totalSales25, backgroundColor: 'rgba(124,58,237,0.55)', borderColor: '#a78bfa', borderWidth: 1.5, borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  // RAC/SAC stacked mix
+  new Chart(document.getElementById('total-mix-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'RAC', data: R.sales.m25, backgroundColor: 'rgba(0,212,255,0.65)', borderRadius: 4 },
+        { label: 'SAC', data: S.sales.m25, backgroundColor: 'rgba(255,107,53,0.65)', borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, ticks: { callback: v => '$'+fmt(v) } }
+      }
+    })
+  });
+
+  // GP & GP rate (dual axis)
+  new Chart(document.getElementById('total-gp-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'GP 2024', data: totalGP24, backgroundColor: 'rgba(124,58,237,0.2)', borderRadius: 4, yAxisID: 'y' },
+        { label: 'GP 2025', data: totalGP25, backgroundColor: 'rgba(124,58,237,0.55)', borderRadius: 4, yAxisID: 'y' },
+        { type: 'line', label: 'GP% 2025', data: totalGPRate25.map(v=>v*100), borderColor: '#fbbf24', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, yAxisID: 'y2' }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: {
+        y: { ticks: { callback: v => '$'+fmt(v) }, position: 'left' },
+        y2: { ticks: { callback: v => v.toFixed(1)+'%', color: '#fbbf24' }, position: 'right', grid: { drawOnChartArea: false } }
+      }
+    })
+  });
+
+  // OI monthly
+  new Chart(document.getElementById('total-oi-chart'), {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'OI 2024', data: totalOI24, backgroundColor: 'rgba(124,58,237,0.25)', borderColor: 'rgba(124,58,237,0.5)', borderWidth: 1, borderRadius: 4 },
+        { label: 'OI 2025', data: totalOI25, backgroundColor: totalOI25.map(v => v >= 0 ? 'rgba(0,255,157,0.6)' : 'rgba(255,69,96,0.6)'), borderRadius: 4 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => '$'+fmt(v) } } }
+    })
+  });
+
+  // OI rate
+  new Chart(document.getElementById('total-oi-rate-chart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        { label: 'Total OI% 2024', data: totalOIRate24.map(v=>v*100), borderColor: 'rgba(167,139,250,0.4)', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, borderDash: [5,3] },
+        { label: 'Total OI% 2025', data: totalOIRate25.map(v=>v*100), borderColor: '#a78bfa', backgroundColor: 'rgba(124,58,237,0.08)', fill: true, tension: 0.4, pointRadius: 4 },
+        { label: 'RAC OI% 2025', data: R.oi_rate.m25.map(v=>v*100), borderColor: 'rgba(0,212,255,0.6)', backgroundColor: 'transparent', tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+        { label: 'SAC OI% 2025', data: S.oi_rate.m25.map(v=>v*100), borderColor: 'rgba(255,107,53,0.6)', backgroundColor: 'transparent', tension: 0.4, pointRadius: 2, borderWidth: 1.5 }
+      ]
+    },
+    options: deepMerge(chartDefaults, {
+      scales: { y: { ticks: { callback: v => v.toFixed(1)+'%' } } }
+    })
+  });
+
+  // Build P&L table
+  const totalSellExp25 = sum(R.sga_selling.m25, S.sga_selling.m25);
+  const totalSellExp24 = sum(R.sga_selling.m24, S.sga_selling.m24);
+  const totalAdminExp25 = sum(R.sga_admin.m25, S.sga_admin.m25);
+  const totalAdminExp24 = sum(R.sga_admin.m24, S.sga_admin.m24);
+  const totalNetSales24 = sum(R.net_sales.m24, S.net_sales.m24);
+  const totalCogs24 = sum(R.cogs.m24, S.cogs.m24);
+
+  const totalSalesYTD25 = R.sales.ytd25 + S.sales.ytd25;
+  const totalSalesYTD24 = R.sales.ytd24 + S.sales.ytd24;
+  const totalNetYTD25 = R.net_sales.ytd25 + S.net_sales.ytd25;
+  const totalNetYTD24 = R.net_sales.ytd24 + S.net_sales.ytd24;
+  const totalCogsYTD25 = R.cogs.ytd25 + S.cogs.ytd25;
+  const totalCogsYTD24 = R.cogs.ytd24 + S.cogs.ytd24;
+  const totalGPYTD25 = R.gross_profit.ytd25 + S.gross_profit.ytd25;
+  const totalGPYTD24 = R.gross_profit.ytd24 + S.gross_profit.ytd24;
+  const totalSGAYTD25 = totalSGA25.reduce((a,b)=>a+b,0);
+  const totalSGAYTD24 = totalSGA24.reduce((a,b)=>a+b,0);
+  const totalOIYTD25 = R.operating_income.ytd25 + S.operating_income.ytd25;
+  const totalOIYTD24 = R.operating_income.ytd24 + S.operating_income.ytd24;
+
+  const tbody = document.getElementById('total-pl-body');
+  const items = [
+    { label: '① Gross Sales', data: totalSales25, ytd25: totalSalesYTD25, ytd24: totalSalesYTD24, cls: 'total-row' },
+    { label: '  – RAC BD', data: R.sales.m25, ytd25: R.sales.ytd25, ytd24: R.sales.ytd24, color: 'var(--rac)' },
+    { label: '  – SAC', data: S.sales.m25, ytd25: S.sales.ytd25, ytd24: S.sales.ytd24, color: 'var(--sac)' },
+    { label: '② Net Sales', data: totalNetSales25, ytd25: totalNetYTD25, ytd24: totalNetYTD24, cls: 'total-row' },
+    { label: '③ COGS', data: totalCogs25, ytd25: totalCogsYTD25, ytd24: totalCogsYTD24, cls: 'total-row', neg: true },
+    { label: '④ Gross Profit', data: totalGP25, ytd25: totalGPYTD25, ytd24: totalGPYTD24, cls: 'total-row' },
+    { label: '  GP%', data: totalGPRate25, ytd25: totalGPYTD25/totalSalesYTD25, ytd24: totalGPYTD24/totalSalesYTD24, isRate: true },
+    { label: '⑤ SG&A', data: totalSGA25, ytd25: totalSGAYTD25, ytd24: totalSGAYTD24, cls: 'total-row', neg: true },
+    { label: '  – Selling', data: totalSellExp25, ytd25: totalSellExp25.reduce((a,b)=>a+b,0), ytd24: totalSellExp24.reduce((a,b)=>a+b,0), neg: true },
+    { label: '  – Admin', data: totalAdminExp25, ytd25: totalAdminExp25.reduce((a,b)=>a+b,0), ytd24: totalAdminExp24.reduce((a,b)=>a+b,0), neg: true },
+    { label: '⑥ Operating Income', data: totalOI25, ytd25: totalOIYTD25, ytd24: totalOIYTD24, cls: 'total-row' },
+    { label: '  – RAC OI', data: R.operating_income.m25, ytd25: R.operating_income.ytd25, ytd24: R.operating_income.ytd24, color: 'var(--rac)' },
+    { label: '  – SAC OI', data: S.operating_income.m25, ytd25: S.operating_income.ytd25, ytd24: S.operating_income.ytd24, color: 'var(--sac)' },
+    { label: '  OI%', data: totalOIRate25, ytd25: totalOIYTD25/totalSalesYTD25, ytd24: totalOIYTD24/totalSalesYTD24, isRate: true }
+  ];
+
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    if (item.cls) tr.className = item.cls;
+    let rowHtml = `<td style="${item.color ? 'color:'+item.color : ''}">${item.label}</td>`;
+
+    item.data.forEach(v => {
+      const fv = item.isRate ? fmtPct(v) : ('$' + fmt(v));
+      let cls = '';
+      if (!item.isRate) {
+        cls = item.neg ? 'neg-val' : (v < 0 ? 'neg-val' : '');
+      }
+      rowHtml += `<td class="${cls}">${fv}</td>`;
+    });
+
+    const ytd25f = item.isRate ? fmtPct(item.ytd25) : ('$' + fmt(item.ytd25));
+    rowHtml += `<td style="font-weight:700;color:#a78bfa">${ytd25f}</td>`;
+
+    const ytd24f = item.isRate ? fmtPct(item.ytd24) : ('$' + fmt(item.ytd24));
+    rowHtml += `<td>${ytd24f}</td>`;
+
+    if (!item.isRate && item.ytd24 !== 0) {
+      const chg = (item.ytd25 - item.ytd24) / Math.abs(item.ytd24);
+      rowHtml += `<td class="${chg>=0?'pos-val':'neg-val'}">${(chg*100).toFixed(1)}%</td>`;
+    } else if (item.isRate) {
+      const diff = item.ytd25 - item.ytd24;
+      rowHtml += `<td class="${diff>=0?'pos-val':'neg-val'}">${(diff*100).toFixed(1)}pp</td>`;
+    } else {
+      rowHtml += `<td>-</td>`;
+    }
+
+    tr.innerHTML = rowHtml;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== TAB SWITCHING =====
+let chartsBuilt = { rac: false, sac: false, compare: false, total: false };
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => {
+    el.classList.remove('active-rac', 'active-sac', 'active-compare', 'active-total');
+  });
+
+  document.getElementById('tab-' + tab).classList.add('active');
+  const tabs = ['rac','sac','compare','total'];
+  document.querySelectorAll('.tab-btn')[tabs.indexOf(tab)].classList.add('active-' + tab);
+
+  if (!chartsBuilt[tab]) {
+    chartsBuilt[tab] = true;
+    if (tab === 'rac') { buildRacCharts(); buildPLTable('rac-pl-body', 'RAC'); }
+    if (tab === 'sac') { buildSacCharts(); buildPLTable('sac-pl-body', 'SAC'); }
+    if (tab === 'compare') buildCompareCharts();
+    if (tab === 'total') buildTotalCharts();
+  }
+}
+
+// Initialize
+buildRacCharts();
+buildPLTable('rac-pl-body', 'RAC');
+chartsBuilt.rac = true;
+</script>
+</body>
+</html>
