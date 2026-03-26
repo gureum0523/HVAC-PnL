@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Performance · YTD 2025–26</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0e1117; --s1:#151a24; --s2:#1c2333; --s3:#242e42;
+  --bd:rgba(255,255,255,.08); --bd2:rgba(255,255,255,.15);
+  --text:#f0f4ff; --mid:#8c9ab5; --dim:#4e5d78;
+  --b2c:#22d3a0; --b2c-l:rgba(34,211,160,.12); --b2c-m:rgba(34,211,160,.3);
+  --proj:#60a5fa; --proj-l:rgba(96,165,250,.12); --proj-m:rgba(96,165,250,.3);
+  --afs:#fbbf24; --afs-l:rgba(251,191,36,.12);  --afs-m:rgba(251,191,36,.3);
+  --esco:#c084fc; --esco-l:rgba(192,132,252,.12); --esco-m:rgba(192,132,252,.3);
+  --inst:#fb923c; --inst-l:rgba(251,146,60,.12);  --inst-m:rgba(251,146,60,.3);
+  --ret:#f87171; --green:#4ade80;
+  --body:'Inter',sans-serif; --num:'Roboto Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--body);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+/* HEADER */
+header{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 36px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.h-left{display:flex;align-items:center;gap:14px;}
+.h-logo{background:var(--text);color:var(--bg);font-family:var(--num);font-size:10px;font-weight:500;letter-spacing:.16em;padding:5px 10px;border-radius:4px;}
+.h-div{width:1px;height:22px;background:var(--bd2);}
+.h-title{font-size:16px;font-weight:700;letter-spacing:-.02em;}
+.h-sub{font-size:11px;color:var(--dim);margin-top:1px;}
+.h-right{display:flex;align-items:center;gap:14px;}
+.h-date{font-family:var(--num);font-size:11px;color:var(--dim);}
+.logic-btn{font-family:var(--num);font-size:10px;color:var(--mid);border:1px solid var(--bd2);background:var(--s2);padding:5px 13px;border-radius:5px;cursor:default;position:relative;}
+.logic-btn:hover .ltip{opacity:1;pointer-events:auto;}
+.ltip{opacity:0;pointer-events:none;transition:opacity .18s;position:absolute;top:calc(100% + 8px);right:0;width:300px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:16px 18px;font-family:var(--body);font-size:11px;color:var(--mid);line-height:1.85;z-index:999;box-shadow:0 12px 32px rgba(0,0,0,.4);}
+.ltip strong{color:var(--text);}
+
+/* PERIOD TABS */
+.period-bar{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 36px;display:flex;align-items:center;position:sticky;top:60px;z-index:195;}
+.ptab{font-size:13px;font-weight:500;color:var(--dim);padding:14px 22px;border:none;border-bottom:2px solid transparent;cursor:pointer;background:none;transition:all .18s;}
+.ptab:hover{color:var(--text);}
+.ptab.on{color:var(--text);border-bottom-color:var(--text);font-weight:700;}
+
+/* CHANNEL PILLS — sticky */
+.ch-bar{padding:10px 36px;background:var(--s1);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bd);position:sticky;top:110px;z-index:190;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+.ch-label{font-size:11px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-right:4px;}
+.chtab{font-size:12px;font-weight:500;padding:5px 16px;border-radius:20px;border:1px solid var(--bd2);cursor:pointer;background:var(--s1);color:var(--mid);transition:all .18s;}
+.chtab:hover{color:var(--text);}
+.chtab.a-all {background:var(--text); color:var(--bg);  border-color:var(--text);  font-weight:700;}
+.chtab.a-b2c {background:var(--b2c-l);color:var(--b2c); border-color:var(--b2c-m); font-weight:700;}
+.chtab.a-proj{background:var(--proj-l);color:var(--proj);border-color:var(--proj-m);font-weight:700;}
+.chtab.a-afs {background:var(--afs-l); color:var(--afs); border-color:var(--afs-m); font-weight:700;}
+.chtab.a-esco{background:var(--esco-l);color:var(--esco);border-color:var(--esco-m);font-weight:700;}
+.chtab.a-inst{background:var(--inst-l);color:var(--inst);border-color:var(--inst-m);font-weight:700;}
+
+/* MAIN */
+main{padding:24px 36px;max-width:1600px;margin:0 auto;}
+
+/* SUMMARY STRIP */
+.ss{display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+.ss-cell{padding:20px 28px;}
+.ss-div{background:var(--bd2);}
+.ss-lbl{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;margin-bottom:7px;}
+.ss-val{font-family:var(--num);font-size:28px;font-weight:500;letter-spacing:-.01em;line-height:1;}
+.ss-sub{font-size:12px;color:var(--dim);margin-top:5px;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s,opacity .2s;cursor:default;}
+.kpi:hover{border-color:var(--bd2);box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.kpi-lbl{font-size:12px;font-weight:600;color:var(--mid);}
+.kpi-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.kpi-val{font-family:var(--num);font-size:26px;font-weight:500;letter-spacing:-.01em;line-height:1;color:var(--kc,var(--text));}
+.kpi-bot{display:flex;align-items:center;justify-content:space-between;margin-top:7px;flex-wrap:wrap;gap:3px;}
+.kpi-pct{font-family:var(--num);font-size:11px;color:var(--dim);}
+.kpi-delta{font-family:var(--num);font-size:11px;font-weight:500;}
+.kpi-accent{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--kc);opacity:.5;}
+.up{color:var(--green);} .down{color:var(--ret);}
+
+/* CARDS */
+.row{display:grid;gap:14px;margin-bottom:14px;}
+.r-w{grid-template-columns:1fr;}
+.r-2{grid-template-columns:1fr 1fr;}
+.r-2b{grid-template-columns:1.25fr 1fr;}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:22px 24px;transition:border-color .2s;}
+.card:hover{border-color:var(--bd2);}
+.card-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+.card-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.02em;}
+.card-sub{font-size:11px;color:var(--dim);margin-top:2px;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.ld{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mid);font-weight:500;}
+.ld-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* MoM */
+.mom-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mom-side{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:16px 18px;}
+.mom-label{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.mom-net-lbl{font-family:var(--num);font-size:10px;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.08em;}
+.mom-net{font-family:var(--num);font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--text);margin-bottom:14px;margin-top:2px;}
+.mom-rows{display:flex;flex-direction:column;gap:10px;}
+.mom-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.mom-ch-name{font-size:12px;font-weight:700;}
+.mom-ch-vals{display:flex;align-items:center;gap:8px;}
+.mom-ch-val{font-family:var(--num);font-size:12px;font-weight:500;}
+.mom-ch-pct{font-family:var(--num);font-size:11px;color:var(--dim);}
+.mom-track{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.mom-fill{height:100%;border-radius:3px;}
+
+/* DEPT TABLE */
+.dept-tbl{width:100%;border-collapse:collapse;}
+.dept-tbl thead td{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;padding:0 10px 10px;border-bottom:1px solid var(--bd2);}
+.dept-tbl tbody tr{border-bottom:1px solid var(--bd);transition:background .12s;}
+.dept-tbl tbody tr:last-child{border-bottom:none;}
+.dept-tbl tbody tr:hover{background:var(--s2);}
+.dept-tbl td{padding:10px;vertical-align:middle;}
+.td-rank{width:24px;font-family:var(--num);font-size:11px;font-weight:500;color:var(--dim);}
+.td-tag{width:90px;}
+.td-name{font-size:13px;font-weight:600;color:var(--text);}
+.td-bar{width:100px;}
+.td-val{text-align:right;font-family:var(--num);font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;letter-spacing:-.01em;}
+.dbar-track{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.dbar-fill{height:100%;border-radius:3px;}
+.ch-tag{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:24px;}
+.share-list{flex:1;display:flex;flex-direction:column;gap:12px;}
+.share-row{display:flex;flex-direction:column;gap:4px;transition:opacity .2s;}
+.share-hd{display:flex;justify-content:space-between;align-items:center;}
+.share-ch{font-size:13px;font-weight:700;}
+.share-val{font-family:var(--num);font-size:12px;color:var(--mid);font-weight:500;}
+.share-track{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.share-fill{height:100%;border-radius:3px;transition:width 1.1s cubic-bezier(.4,0,.2,1);}
+
+/* REGION */
+.rg-list{display:flex;flex-direction:column;gap:14px;}
+.rg-row{display:flex;align-items:center;gap:14px;}
+.rg-name{font-size:13px;font-weight:600;color:var(--text);width:60px;flex-shrink:0;}
+.rg-stack{flex:1;display:flex;height:26px;border-radius:6px;overflow:hidden;gap:1px;}
+.rg-seg{height:100%;cursor:default;min-width:3px;}
+.rg-total{font-family:var(--num);font-size:12px;font-weight:500;color:var(--text);width:70px;text-align:right;flex-shrink:0;}
+
+/* CAT */
+.cat-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cat-name{width:118px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;}
+.cat-track{flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.cat-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.cat-pct{font-family:var(--num);font-size:11px;color:var(--mid);width:38px;text-align:right;flex-shrink:0;}
+.cat-val{font-family:var(--num);font-size:11px;color:var(--text);width:74px;text-align:right;flex-shrink:0;}
+
+/* FOOTER */
+footer{text-align:center;padding:14px 36px;font-family:var(--num);font-size:10px;color:var(--dim);border-top:1px solid var(--bd);background:var(--s1);margin-top:12px;letter-spacing:.04em;}
+
+/* ANIM */
+.kpi,.card,.ss{animation:fup .38s ease both;}
+.kpi:nth-child(1){animation-delay:.04s}.kpi:nth-child(2){animation-delay:.08s}
+.kpi:nth-child(3){animation-delay:.12s}.kpi:nth-child(4){animation-delay:.16s}
+.kpi:nth-child(5){animation-delay:.20s}
+@keyframes fup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:1100px){
+  .kpi-row{grid-template-columns:repeat(3,1fr);}
+  .r-2,.r-2b{grid-template-columns:1fr;}
+  .ss{grid-template-columns:1fr;}.ss-div{display:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-left">
+    <span class="h-logo">HGISC</span>
+    <div class="h-div"></div>
+    <div>
+      <div class="h-title">Sales Performance Dashboard</div>
+      <div class="h-sub">Y2025–26 · November 2025 – February 2026 &nbsp;·&nbsp; All figures in SAR (excl. VAT)</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <div class="h-date" id="hdate"></div>
+    <div class="logic-btn">Attribution Logic v1.3 ▾
+      <div class="ltip">
+        <strong>매출 귀속 로직 v1.3</strong><br><br>
+        1. ZSEC → SEC / AFS<br>
+        2. ZAMS·ZAMR (非install) → AMC / AFS<br>
+        3. Group = installation → Installation<br>
+        4. Acc 부서 직원 → Installation<br>
+        5. Index B열 → 부서/채널 매핑<br>
+        6. ZDR·ZSPS·ZSPR·ZECO → 제외<br><br>
+        <strong>Value 컬럼 사용 (세전 · R/C 이미 음수)</strong>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="period-bar">
+  <button class="ptab on" data-p="ytd" onclick="setPeriod('ytd')">YTD (Nov–Feb)</button>
+  <button class="ptab"    data-p="nov" onclick="setPeriod('nov')">November 2025</button>
+  <button class="ptab"    data-p="dec" onclick="setPeriod('dec')">December 2025</button>
+  <button class="ptab"    data-p="jan" onclick="setPeriod('jan')">January 2026</button>
+  <button class="ptab"    data-p="feb" onclick="setPeriod('feb')">February 2026</button>
+</div>
+
+<div class="ch-bar">
+  <span class="ch-label">Channel</span>
+  <button class="chtab a-all"  data-ch="all"  onclick="setCh('all')">전체</button>
+  <button class="chtab t-b2c"  data-ch="b2c"  onclick="setCh('b2c')">B2C</button>
+  <button class="chtab t-proj" data-ch="proj" onclick="setCh('proj')">Project</button>
+  <button class="chtab t-afs"  data-ch="afs"  onclick="setCh('afs')">AFS</button>
+  <button class="chtab t-esco" data-ch="esco" onclick="setCh('esco')">ESCO</button>
+  <button class="chtab t-inst" data-ch="inst" onclick="setCh('inst')">Installation</button>
+</div>
+
+<main>
+
+<!-- SUMMARY STRIP -->
+<div class="ss">
+  <div class="ss-cell">
+    <div class="ss-lbl">Gross Sales</div>
+    <div class="ss-val" id="s-gross" style="color:var(--green)">—</div>
+    <div class="ss-sub">인보이스 기준 총 매출</div>
+  </div>
+  <div class="ss-div"></div>
+  <div class="ss-cell">
+    <div class="ss-lbl">Returns &amp; Cancellations</div>
+    <div class="ss-val" id="s-ret" style="color:var(--ret)">—</div>
+    <div class="ss-sub">반품 및 취소 차감액</div>
+  </div>
+  <div class="ss-div"></div>
+  <div class="ss-cell">
+    <div class="ss-lbl">Net Sales</div>
+    <div class="ss-val" id="s-net" style="color:var(--text)">—</div>
+    <div class="ss-sub" id="s-net-sub">Gross − Returns</div>
+  </div>
+</div>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi" id="kpi-b2c" style="--kc:var(--b2c)">
+    <div class="kpi-top"><span class="kpi-lbl">B2C</span><div class="kpi-icon" style="background:var(--b2c-l)">🏪</div></div>
+    <div class="kpi-val" id="k-b2c">—</div>
+    <div class="kpi-bot"><span class="kpi-pct" id="k-b2c-p">—</span><span class="kpi-delta" id="k-b2c-d"></span></div>
+    <div class="kpi-accent"></div>
+  </div>
+  <div class="kpi" id="kpi-proj" style="--kc:var(--proj)">
+    <div class="kpi-top"><span class="kpi-lbl">Project</span><div class="kpi-icon" style="background:var(--proj-l)">🏗</div></div>
+    <div class="kpi-val" id="k-proj">—</div>
+    <div class="kpi-bot"><span class="kpi-pct" id="k-proj-p">—</span><span class="kpi-delta" id="k-proj-d"></span></div>
+    <div class="kpi-accent"></div>
+  </div>
+  <div class="kpi" id="kpi-afs" style="--kc:var(--afs)">
+    <div class="kpi-top"><span class="kpi-lbl">AFS</span><div class="kpi-icon" style="background:var(--afs-l)">⚡</div></div>
+    <div class="kpi-val" id="k-afs">—</div>
+    <div class="kpi-bot"><span class="kpi-pct" id="k-afs-p">—</span><span class="kpi-delta" id="k-afs-d"></span></div>
+    <div class="kpi-accent"></div>
+  </div>
+  <div class="kpi" id="kpi-esco" style="--kc:var(--esco)">
+    <div class="kpi-top"><span class="kpi-lbl">ESCO</span><div class="kpi-icon" style="background:var(--esco-l)">💡</div></div>
+    <div class="kpi-val" id="k-esco">—</div>
+    <div class="kpi-bot"><span class="kpi-pct" id="k-esco-p">—</span><span class="kpi-delta" id="k-esco-d"></span></div>
+    <div class="kpi-accent"></div>
+  </div>
+  <div class="kpi" id="kpi-inst" style="--kc:var(--inst)">
+    <div class="kpi-top"><span class="kpi-lbl">Installation</span><div class="kpi-icon" style="background:var(--inst-l)">🔧</div></div>
+    <div class="kpi-val" id="k-inst">—</div>
+    <div class="kpi-bot"><span class="kpi-pct" id="k-inst-p">—</span><span class="kpi-delta" id="k-inst-d"></span></div>
+    <div class="kpi-accent"></div>
+  </div>
+</div>
+
+<!-- CATEGORY MIX -->
+<div class="row r-w">
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">제품 카테고리 판매 비중</div><div class="card-sub" id="cat-sub">기간 · 채널 필터 연동</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;">
+      <div style="position:relative;height:280px;"><canvas id="catChart"></canvas></div>
+      <div id="cat-bars" style="padding-top:4px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DAILY TREND -->
+<div class="row r-w">
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title" id="daily-title">일별 순매출 추이</div><div class="card-sub" id="daily-sub">January &amp; February 2026</div></div>
+      <div class="legend">
+        <div class="ld"><div class="ld-dot" style="background:var(--b2c)"></div>B2C</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--proj)"></div>Project</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--afs)"></div>AFS</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--esco)"></div>ESCO</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--inst)"></div>Installation</div>
+      </div>
+    </div>
+    <div style="position:relative;height:250px;"><canvas id="dailyChart"></canvas></div>
+  </div>
+</div>
+
+<!-- MoM + Dept -->
+<div class="row r-2b">
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">월별 채널 비교</div><div class="card-sub">January vs February 2026</div></div></div>
+    <div class="mom-wrap" style="grid-template-columns:repeat(4,1fr);"><div class="mom-side" id="mom-nov"></div><div class="mom-side" id="mom-dec"></div><div class="mom-side" id="mom-jan"></div><div class="mom-side" id="mom-feb"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">부서별 순매출 순위</div><div class="card-sub" id="dept-sub">기간 · 채널 필터 연동</div></div></div>
+    <table class="dept-tbl">
+      <thead><tr><td class="td-rank">#</td><td class="td-tag">채널</td><td>부서</td><td class="td-bar"></td><td style="text-align:right">순매출 (SAR)</td></tr></thead>
+      <tbody id="dept-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Donut + Region -->
+<div class="row r-2">
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">채널별 구성 비중</div><div class="card-sub" id="share-sub">순매출 기준</div></div></div>
+    <div class="donut-wrap">
+      <div style="position:relative;width:165px;height:165px;flex-shrink:0;"><canvas id="donutChart"></canvas></div>
+      <div class="share-list" id="share-list"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div><div class="card-title">지역별 채널 구성</div><div class="card-sub" id="region-sub">기간 · 채널 필터 연동</div></div>
+      <div class="legend">
+        <div class="ld"><div class="ld-dot" style="background:var(--b2c)"></div>B2C</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--proj)"></div>Project</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--esco)"></div>ESCO</div>
+        <div class="ld"><div class="ld-dot" style="background:var(--inst)"></div>Install</div>
+      </div>
+    </div>
+    <div class="rg-list" id="region-grid"></div>
+  </div>
+</div>
+
+</main>
+<footer>HGISC &nbsp;·&nbsp; Sales Intelligence Dashboard &nbsp;·&nbsp; Y2026 YTD Jan–Feb &nbsp;·&nbsp; Attribution Logic v1.3 &nbsp;·&nbsp; SAR excl. VAT 15%</footer>
+
+<script>
+// ════════════════ DATA ════════════════
+const KPI={"ytd":{"all":{"gross":331731792.87,"returns":-21001998.93,"net":301360779.16,"by_channel":{"B2C":80560689.2,"Project":163482898.06,"AFS":25640773.51,"ESCO":14114997.26,"Installation":17561422.13}},"B2C":{"gross":87288217.71,"returns":-5612188.44,"net":80560689.2},"Project":{"gross":186348614.04,"returns":-14614728.27,"net":163482898.06},"AFS":{"gross":26090005.51,"returns":-446548.0,"net":25640773.51},"ESCO":{"gross":14443531.48,"returns":-328534.22,"net":14114997.26},"Installation":{"gross":17561422.13,"returns":0.0,"net":17561422.13}},"nov":{"all":{"gross":71302112.31,"returns":-2056944.48,"net":61848720.8,"by_channel":{"B2C":6851409.85,"Project":43054114.37,"AFS":5477601.85,"ESCO":2242820.1,"Installation":4222774.63}},"B2C":{"gross":8425293.17,"returns":-909465.81,"net":6851409.85},"Project":{"gross":50929201.46,"returns":-1143057.57,"net":43054114.37},"AFS":{"gross":5480142.85,"returns":-2541.0,"net":5477601.85},"ESCO":{"gross":2244700.2,"returns":-1880.1,"net":2242820.1},"Installation":{"gross":4222774.63,"returns":0.0,"net":4222774.63}},"dec":{"all":{"gross":66074655.56,"returns":-2661988.45,"net":61440099.36,"by_channel":{"B2C":4914810.35,"Project":40958130.69,"AFS":8013268.66,"ESCO":4071981.16,"Installation":3481908.5}},"B2C":{"gross":7493476.54,"returns":-2127742.63,"net":4914810.35,"by_channel":{"B2C":4914810.35,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0}},"Project":{"gross":43000170.58,"returns":-523080.7,"net":40958130.69,"by_channel":{"B2C":0.0,"Project":40958130.69,"AFS":0.0,"ESCO":0.0,"Installation":0.0}},"AFS":{"gross":8025414.66,"returns":-9461.0,"net":8013268.66,"by_channel":{"B2C":0.0,"Project":0.0,"AFS":8013268.66,"ESCO":0.0,"Installation":0.0}},"ESCO":{"gross":4073685.28,"returns":-1704.12,"net":4071981.16,"by_channel":{"B2C":0.0,"Project":0.0,"AFS":0.0,"ESCO":4071981.16,"Installation":0.0}},"Installation":{"gross":3481908.5,"returns":0.0,"net":3481908.5,"by_channel":{"B2C":0.0,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":3481908.5}}},"jan":{"all":{"gross":99864975,"returns":-8522002,"net":91342973,"by_channel":{"B2C":28527024,"Project":45231276,"AFS":8534738,"ESCO":4161850,"Installation":4888086}},"B2C":{"gross":30936388,"returns":-2409365,"net":28527024},"Project":{"gross":50924966,"returns":-5693690,"net":45231276},"AFS":{"gross":8951993,"returns":-417256,"net":8534738},"ESCO":{"gross":4163541,"returns":-1691,"net":4161850},"Installation":{"gross":4888086,"returns":0,"net":4888086}},"feb":{"all":{"gross":94490050,"returns":-7761064,"net":86728986,"by_channel":{"B2C":40267445,"Project":34239377,"AFS":3615165,"ESCO":3638346,"Installation":4968653}},"B2C":{"gross":40433060,"returns":-165615,"net":40267445},"Project":{"gross":41494276,"returns":-7254900,"net":34239377},"AFS":{"gross":3632455,"returns":-17290,"net":3615165},"ESCO":{"gross":3961605,"returns":-323259,"net":3638346},"Installation":{"gross":4968653,"returns":0,"net":4968653}}};
+const DAILY={"ytd":[{"Invoice Date":"2025-11-02","B2C":-130999.0},{"Invoice Date":"2025-11-03","B2C":-160042.12,"Project":5545.51,"AFS":205750.0},{"Invoice Date":"2025-11-04","B2C":3503.56,"Project":-214521.05},{"Invoice Date":"2025-11-05","B2C":368002.55,"Project":977601.2,"AFS":665280.0},{"Invoice Date":"2025-11-06","B2C":20328.32,"Project":442041.45,"AFS":5026.86,"Installation":360.0},{"Invoice Date":"2025-11-09","B2C":558928.76,"Project":926535.68,"AFS":6400.0},{"Invoice Date":"2025-11-10","Project":900789.05,"AFS":91556.66,"Installation":54629.44},{"Invoice Date":"2025-11-11","B2C":152431.88,"Project":1434361.37,"AFS":369286.0},{"Invoice Date":"2025-11-12","B2C":162510.87,"Project":1199534.86},{"Invoice Date":"2025-11-13","B2C":42312.36,"Project":2588220.83},{"Invoice Date":"2025-11-15","Project":-3721690.65},{"Invoice Date":"2025-11-16","B2C":790631.96,"Project":5244619.43,"Installation":145860.35},{"Invoice Date":"2025-11-17","B2C":102264.57,"Project":926757.97,"AFS":225685.0,"ESCO":-1880.1,"Installation":1065237.6},{"Invoice Date":"2025-11-18","B2C":154032.33,"Project":1181648.94,"AFS":1188148.0,"Installation":183521.58},{"Invoice Date":"2025-11-19","B2C":237207.54,"Project":771421.8},{"Invoice Date":"2025-11-20","B2C":249290.02,"Project":663466.73,"AFS":269351.0},{"Invoice Date":"2025-11-23","B2C":260963.22,"Project":-101114.41,"AFS":11990.0,"ESCO":140993.0,"Installation":900.0},{"Invoice Date":"2025-11-24","B2C":131355.81,"Project":857351.04,"AFS":73475.0,"ESCO":20671.88,"Installation":32846.3},{"Invoice Date":"2025-11-25","B2C":-77797.58,"Project":3949043.31,"AFS":5206.2,"ESCO":46080.52},{"Invoice Date":"2025-11-26","B2C":754160.88,"Project":1154784.55,"ESCO":472310.74,"Installation":9000.0},{"Invoice Date":"2025-11-27","B2C":-169191.43,"Project":614487.95,"AFS":-2541.0},{"Invoice Date":"2025-11-29","B2C":90214.7,"Project":11468834.53,"ESCO":59556.0},{"Invoice Date":"2025-11-30","B2C":3311300.65,"Project":11784394.28,"AFS":2362988.13,"ESCO":1505088.06,"Installation":2730419.36},{"Invoice Date":"2025-12-01","B2C":-3182.1,"AFS":23860.0},{"Invoice Date":"2025-12-02","Project":-466345.14,"AFS":4489.0},{"Invoice Date":"2025-12-03","B2C":414131.82,"Project":116996.58},{"Invoice Date":"2025-12-04","B2C":448207.93,"Project":99210.16,"AFS":575.0},{"Invoice Date":"2025-12-07","B2C":235117.33,"Project":1136495.04},{"Invoice Date":"2025-12-08","B2C":448580.87,"Project":840502.4},{"Invoice Date":"2025-12-09","B2C":289536.32,"Project":282759.7,"AFS":60140.0},{"Invoice Date":"2025-12-10","B2C":229699.14,"Project":1357974.48,"AFS":74917.6},{"Invoice Date":"2025-12-11","B2C":393878.14,"Project":1701577.27,"AFS":1551334.9},{"Invoice Date":"2025-12-13","B2C":32821.25,"Project":10730.09},{"Invoice Date":"2025-12-14","B2C":519874.26,"Project":1682512.73,"AFS":219824.14},{"Invoice Date":"2025-12-15","B2C":105527.29,"Project":4869260.32,"AFS":52169.0,"Installation":1152455.46},{"Invoice Date":"2025-12-16","B2C":2887.26,"Project":1107083.25,"AFS":7535.0},{"Invoice Date":"2025-12-17","B2C":218103.17,"Project":265643.82,"AFS":36365.96,"ESCO":612584.2},{"Invoice Date":"2025-12-18","B2C":-21149.82,"Project":586941.52,"AFS":4975.0},{"Invoice Date":"2025-12-20","B2C":133539.86},{"Invoice Date":"2025-12-21","B2C":261125.1,"Project":1705474.73,"AFS":249020.0,"Installation":374842.46},{"Invoice Date":"2025-12-22","B2C":181770.58,"Project":1130107.79,"AFS":20285.0},{"Invoice Date":"2025-12-23","B2C":286863.29,"Project":1036081.63,"AFS":16981.0},{"Invoice Date":"2025-12-24","B2C":395357.67,"Project":324757.5,"AFS":112517.0},{"Invoice Date":"2025-12-25","B2C":342120.99,"Project":23170366.82,"AFS":4667470.06,"ESCO":3459396.96,"Installation":1954610.58},{"Invoice Date":"2025-12-28","AFS":750.0},{"Invoice Date":"2025-12-29","AFS":9825.0},{"Invoice Date":"2025-12-30","AFS":804687.0},{"Invoice Date":"2025-12-31","AFS":95548.0},{"Invoice Date":"2026-01-01","B2C":8003.78,"Project":9601.04,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-03","B2C":27745.82,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-04","B2C":34636.7,"Project":-92006.09,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-05","B2C":534406.95,"Project":491709.6,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-06","B2C":223617.08000000002,"Project":133659.14,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-07","B2C":106501.32,"Project":345893.63,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-08","B2C":934396.74,"Project":861277.54,"AFS":2397164.09,"ESCO":422411.21,"Installation":0.0},{"Invoice Date":"2026-01-11","B2C":357528.34,"Project":1375641.61,"AFS":194433.33,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-12","B2C":77058.45999999999,"Project":366393.10000000003,"AFS":385795.0,"ESCO":-1690.91,"Installation":0.0},{"Invoice Date":"2026-01-13","B2C":635246.04,"Project":2500065.86,"AFS":509032.0,"ESCO":0.0,"Installation":29855.22},{"Invoice Date":"2026-01-14","B2C":500600.9,"Project":539305.0,"AFS":0.0,"ESCO":0.0,"Installation":205321.0},{"Invoice Date":"2026-01-15","B2C":-267840.25,"Project":745839.05,"AFS":415000.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-17","B2C":60981.92,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-18","B2C":-294855.1699999999,"Project":834102.88,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-19","B2C":1226472.64,"Project":740757.25,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-20","B2C":1480100.51,"Project":1870028.4,"AFS":7503.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-21","B2C":477573.99,"Project":5638432.49,"AFS":1281671.0,"ESCO":2479005.49,"Installation":0.0},{"Invoice Date":"2026-01-22","B2C":770343.64,"Project":2881859.42,"AFS":974263.5,"ESCO":0.0,"Installation":758282.91},{"Invoice Date":"2026-01-24","B2C":369630.9,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-25","B2C":431392.97000000003,"Project":1391231.0,"AFS":0.0,"ESCO":26902.5,"Installation":594634.55},{"Invoice Date":"2026-01-26","B2C":351542.95,"Project":-1440547.88,"AFS":-2255.64,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-27","B2C":1694401.01,"Project":3828983.7,"AFS":833769.0,"ESCO":0.0,"Installation":17456.28},{"Invoice Date":"2026-01-28","B2C":2011628.61,"Project":381269.09,"AFS":1538362.46,"ESCO":56038.5,"Installation":961314.0},{"Invoice Date":"2026-01-29","B2C":11334582.55,"Project":12253077.51,"AFS":0.0,"ESCO":300206.4,"Installation":2321222.0},{"Invoice Date":"2026-01-31","B2C":5441325.14,"Project":9574702.540000001,"AFS":0.0,"ESCO":878977.0199999999,"Installation":0.0},{"Invoice Date":"2026-02-01","B2C":0.0,"Project":23478.8,"AFS":100.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-02","B2C":143059.95,"Project":31824.64,"AFS":633240.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-03","B2C":0.0,"Project":24838.620000000003,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-04","B2C":474134.43,"Project":137504.59,"AFS":890.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-05","B2C":30192.84,"Project":602289.76,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-07","B2C":250654.44,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-08","B2C":77207.04000000001,"Project":1486829.3,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-09","B2C":521424.51,"Project":1532565.3,"AFS":238475.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-10","B2C":532344.06,"Project":408230.22,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-11","B2C":2351348.59,"Project":856416.45,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-12","B2C":864547.4299999999,"Project":-3424459.15,"AFS":94990.0,"ESCO":-4.820000000006985,"Installation":181766.0},{"Invoice Date":"2026-02-14","B2C":587844.82,"Project":2313311.02,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-15","B2C":132318.4,"Project":6440320.84,"AFS":166925.0,"ESCO":0.0,"Installation":31492.49},{"Invoice Date":"2026-02-16","B2C":1823743.55,"Project":1111627.26,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-17","B2C":744497.82,"Project":354344.46,"AFS":188782.0,"ESCO":202528.8,"Installation":1319.17},{"Invoice Date":"2026-02-18","B2C":987437.91,"Project":523052.54,"AFS":368914.0,"ESCO":0.0,"Installation":450.0},{"Invoice Date":"2026-02-19","B2C":817214.85,"Project":559895.99,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-21","B2C":1483502.49,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-22","B2C":246648.23,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-23","B2C":219861.74,"Project":2903891.96,"AFS":0.0,"ESCO":0.0,"Installation":36365.17},{"Invoice Date":"2026-02-24","B2C":762524.8,"Project":821005.9299999999,"AFS":99283.84,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-25","B2C":669117.36,"Project":2053192.94,"AFS":0.0,"ESCO":462421.77,"Installation":360.0},{"Invoice Date":"2026-02-26","B2C":10529001.1,"Project":5166400.28,"AFS":178234.0,"ESCO":1662730.69,"Installation":3383024.9},{"Invoice Date":"2026-02-27","B2C":0.0,"Project":2193233.26,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-28","B2C":16018818.27,"Project":8119581.51,"AFS":1645331.1,"ESCO":1310669.52,"Installation":1333875.74}],"nov":[{"Invoice Date":"2025-11-02","B2C":-130999.0},{"Invoice Date":"2025-11-03","B2C":-160042.12,"Project":5545.51,"AFS":205750.0},{"Invoice Date":"2025-11-04","B2C":3503.56,"Project":-214521.05},{"Invoice Date":"2025-11-05","B2C":368002.55,"Project":977601.2,"AFS":665280.0},{"Invoice Date":"2025-11-06","B2C":20328.32,"Project":442041.45,"AFS":5026.86,"Installation":360.0},{"Invoice Date":"2025-11-09","B2C":558928.76,"Project":926535.68,"AFS":6400.0},{"Invoice Date":"2025-11-10","Project":900789.05,"AFS":91556.66,"Installation":54629.44},{"Invoice Date":"2025-11-11","B2C":152431.88,"Project":1434361.37,"AFS":369286.0},{"Invoice Date":"2025-11-12","B2C":162510.87,"Project":1199534.86},{"Invoice Date":"2025-11-13","B2C":42312.36,"Project":2588220.83},{"Invoice Date":"2025-11-15","Project":-3721690.65},{"Invoice Date":"2025-11-16","B2C":790631.96,"Project":5244619.43,"Installation":145860.35},{"Invoice Date":"2025-11-17","B2C":102264.57,"Project":926757.97,"AFS":225685.0,"ESCO":-1880.1,"Installation":1065237.6},{"Invoice Date":"2025-11-18","B2C":154032.33,"Project":1181648.94,"AFS":1188148.0,"Installation":183521.58},{"Invoice Date":"2025-11-19","B2C":237207.54,"Project":771421.8},{"Invoice Date":"2025-11-20","B2C":249290.02,"Project":663466.73,"AFS":269351.0},{"Invoice Date":"2025-11-23","B2C":260963.22,"Project":-101114.41,"AFS":11990.0,"ESCO":140993.0,"Installation":900.0},{"Invoice Date":"2025-11-24","B2C":131355.81,"Project":857351.04,"AFS":73475.0,"ESCO":20671.88,"Installation":32846.3},{"Invoice Date":"2025-11-25","B2C":-77797.58,"Project":3949043.31,"AFS":5206.2,"ESCO":46080.52},{"Invoice Date":"2025-11-26","B2C":754160.88,"Project":1154784.55,"ESCO":472310.74,"Installation":9000.0},{"Invoice Date":"2025-11-27","B2C":-169191.43,"Project":614487.95,"AFS":-2541.0},{"Invoice Date":"2025-11-29","B2C":90214.7,"Project":11468834.53,"ESCO":59556.0},{"Invoice Date":"2025-11-30","B2C":3311300.65,"Project":11784394.28,"AFS":2362988.13,"ESCO":1505088.06,"Installation":2730419.36}],"dec":[{"Invoice Date":"2025-12-01","B2C":-3182.1,"AFS":23860.0},{"Invoice Date":"2025-12-02","Project":-466345.14,"AFS":4489.0},{"Invoice Date":"2025-12-03","B2C":414131.82,"Project":116996.58},{"Invoice Date":"2025-12-04","B2C":448207.93,"Project":99210.16,"AFS":575.0},{"Invoice Date":"2025-12-07","B2C":235117.33,"Project":1136495.04},{"Invoice Date":"2025-12-08","B2C":448580.87,"Project":840502.4},{"Invoice Date":"2025-12-09","B2C":289536.32,"Project":282759.7,"AFS":60140.0},{"Invoice Date":"2025-12-10","B2C":229699.14,"Project":1357974.48,"AFS":74917.6},{"Invoice Date":"2025-12-11","B2C":393878.14,"Project":1701577.27,"AFS":1551334.9},{"Invoice Date":"2025-12-13","B2C":32821.25,"Project":10730.09},{"Invoice Date":"2025-12-14","B2C":519874.26,"Project":1682512.73,"AFS":219824.14},{"Invoice Date":"2025-12-15","B2C":105527.29,"Project":4869260.32,"AFS":52169.0,"Installation":1152455.46},{"Invoice Date":"2025-12-16","B2C":2887.26,"Project":1107083.25,"AFS":7535.0},{"Invoice Date":"2025-12-17","B2C":218103.17,"Project":265643.82,"AFS":36365.96,"ESCO":612584.2},{"Invoice Date":"2025-12-18","B2C":-21149.82,"Project":586941.52,"AFS":4975.0},{"Invoice Date":"2025-12-20","B2C":133539.86},{"Invoice Date":"2025-12-21","B2C":261125.1,"Project":1705474.73,"AFS":249020.0,"Installation":374842.46},{"Invoice Date":"2025-12-22","B2C":181770.58,"Project":1130107.79,"AFS":20285.0},{"Invoice Date":"2025-12-23","B2C":286863.29,"Project":1036081.63,"AFS":16981.0},{"Invoice Date":"2025-12-24","B2C":395357.67,"Project":324757.5,"AFS":112517.0},{"Invoice Date":"2025-12-25","B2C":342120.99,"Project":23170366.82,"AFS":4667470.06,"ESCO":3459396.96,"Installation":1954610.58},{"Invoice Date":"2025-12-28","AFS":750.0},{"Invoice Date":"2025-12-29","AFS":9825.0},{"Invoice Date":"2025-12-30","AFS":804687.0},{"Invoice Date":"2025-12-31","AFS":95548.0}],"jan":[{"Invoice Date":"2026-01-01","B2C":8003.78,"Project":9601.04,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-03","B2C":27745.82,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-04","B2C":34636.7,"Project":-92006.09,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-05","B2C":534406.95,"Project":491709.6,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-06","B2C":223617.08000000002,"Project":133659.14,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-07","B2C":106501.32,"Project":345893.63,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-08","B2C":934396.74,"Project":861277.54,"AFS":2397164.09,"ESCO":422411.21,"Installation":0.0},{"Invoice Date":"2026-01-11","B2C":357528.34,"Project":1375641.61,"AFS":194433.33,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-12","B2C":77058.45999999999,"Project":366393.10000000003,"AFS":385795.0,"ESCO":-1690.91,"Installation":0.0},{"Invoice Date":"2026-01-13","B2C":635246.04,"Project":2500065.86,"AFS":509032.0,"ESCO":0.0,"Installation":29855.22},{"Invoice Date":"2026-01-14","B2C":500600.9,"Project":539305.0,"AFS":0.0,"ESCO":0.0,"Installation":205321.0},{"Invoice Date":"2026-01-15","B2C":-267840.25,"Project":745839.05,"AFS":415000.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-17","B2C":60981.92,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-18","B2C":-294855.1699999999,"Project":834102.88,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-19","B2C":1226472.64,"Project":740757.25,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-20","B2C":1480100.51,"Project":1870028.4,"AFS":7503.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-21","B2C":477573.99,"Project":5638432.49,"AFS":1281671.0,"ESCO":2479005.49,"Installation":0.0},{"Invoice Date":"2026-01-22","B2C":770343.64,"Project":2881859.42,"AFS":974263.5,"ESCO":0.0,"Installation":758282.91},{"Invoice Date":"2026-01-24","B2C":369630.9,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-25","B2C":431392.97000000003,"Project":1391231.0,"AFS":0.0,"ESCO":26902.5,"Installation":594634.55},{"Invoice Date":"2026-01-26","B2C":351542.95,"Project":-1440547.88,"AFS":-2255.64,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-01-27","B2C":1694401.01,"Project":3828983.7,"AFS":833769.0,"ESCO":0.0,"Installation":17456.28},{"Invoice Date":"2026-01-28","B2C":2011628.61,"Project":381269.09,"AFS":1538362.46,"ESCO":56038.5,"Installation":961314.0},{"Invoice Date":"2026-01-29","B2C":11334582.55,"Project":12253077.51,"AFS":0.0,"ESCO":300206.4,"Installation":2321222.0},{"Invoice Date":"2026-01-31","B2C":5441325.14,"Project":9574702.540000001,"AFS":0.0,"ESCO":878977.0199999999,"Installation":0.0}],"feb":[{"Invoice Date":"2026-02-01","B2C":0.0,"Project":23478.8,"AFS":100.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-02","B2C":143059.95,"Project":31824.64,"AFS":633240.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-03","B2C":0.0,"Project":24838.620000000003,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-04","B2C":474134.43,"Project":137504.59,"AFS":890.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-05","B2C":30192.84,"Project":602289.76,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-07","B2C":250654.44,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-08","B2C":77207.04000000001,"Project":1486829.3,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-09","B2C":521424.51,"Project":1532565.3,"AFS":238475.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-10","B2C":532344.06,"Project":408230.22,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-11","B2C":2351348.59,"Project":856416.45,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-12","B2C":864547.4299999999,"Project":-3424459.15,"AFS":94990.0,"ESCO":-4.820000000006985,"Installation":181766.0},{"Invoice Date":"2026-02-14","B2C":587844.82,"Project":2313311.02,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-15","B2C":132318.4,"Project":6440320.84,"AFS":166925.0,"ESCO":0.0,"Installation":31492.49},{"Invoice Date":"2026-02-16","B2C":1823743.55,"Project":1111627.26,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-17","B2C":744497.82,"Project":354344.46,"AFS":188782.0,"ESCO":202528.8,"Installation":1319.17},{"Invoice Date":"2026-02-18","B2C":987437.91,"Project":523052.54,"AFS":368914.0,"ESCO":0.0,"Installation":450.0},{"Invoice Date":"2026-02-19","B2C":817214.85,"Project":559895.99,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-21","B2C":1483502.49,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-22","B2C":246648.23,"Project":0.0,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-23","B2C":219861.74,"Project":2903891.96,"AFS":0.0,"ESCO":0.0,"Installation":36365.17},{"Invoice Date":"2026-02-24","B2C":762524.8,"Project":821005.9299999999,"AFS":99283.84,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-25","B2C":669117.36,"Project":2053192.94,"AFS":0.0,"ESCO":462421.77,"Installation":360.0},{"Invoice Date":"2026-02-26","B2C":10529001.1,"Project":5166400.28,"AFS":178234.0,"ESCO":1662730.69,"Installation":3383024.9},{"Invoice Date":"2026-02-27","B2C":0.0,"Project":2193233.26,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Invoice Date":"2026-02-28","B2C":16018818.27,"Project":8119581.51,"AFS":1645331.1,"ESCO":1310669.52,"Installation":1333875.74}]};
+const DEPT={"ytd":[{"dept":"Central Projects","channel":"Project","value":63463121.16},{"dept":"Dealer - OR","channel":"B2C","value":40645442.54},{"dept":"WEST","channel":"Project","value":37888319.57},{"dept":"Dealer - IR","channel":"B2C","value":33405393.89},{"dept":"ACS","channel":"Project","value":26063055.74},{"dept":"SEC","channel":"AFS","value":23184216.74},{"dept":"Direct Channel","channel":"Project","value":18187919.39},{"dept":"Installation","channel":"Installation","value":17561422.56},{"dept":"EAST","channel":"Project","value":14211964.43},{"dept":"ESCO","channel":"ESCO","value":14114997.43},{"dept":"ACS - West","channel":"Project","value":8170030.39},{"dept":"Employee/Cash/Others","channel":"B2C","value":7174269.45},{"dept":"AMC","channel":"AFS","value":2456556.45},{"dept":"ACS - EAST","channel":"Project","value":1930075.91},{"dept":"ACS-North","channel":"Project","value":300440.39}],"nov":[{"dept":"Central Projects","channel":"Project","value":21083843.59},{"dept":"WEST","channel":"Project","value":8384766.18},{"dept":"ACS","channel":"Project","value":8292029.44},{"dept":"Direct Channel","channel":"Project","value":5584074.32},{"dept":"Dealer - IR","channel":"B2C","value":4847575.13},{"dept":"SEC","channel":"AFS","value":4591522.8},{"dept":"EAST","channel":"Project","value":4581289.14},{"dept":"Installation","channel":"Installation","value":4222774.63},{"dept":"ESCO","channel":"ESCO","value":2242820.1},{"dept":"ACS - West","channel":"Project","value":1686928.57},{"dept":"Dealer - OR","channel":"B2C","value":1461576.5},{"dept":"Employee/Cash/Others","channel":"B2C","value":1206675.73},{"dept":"AMC","channel":"AFS","value":886079.05},{"dept":"ACS - EAST","channel":"Project","value":173212.65}],"dec":[{"dept":"Central Projects","channel":"Project","value":16804048.65},{"dept":"SEC","channel":"AFS","value":7314086.84},{"dept":"WEST","channel":"Project","value":6683823.35},{"dept":"EAST","channel":"Project","value":6540383.01},{"dept":"ACS","channel":"Project","value":4577768.41},{"dept":"ESCO","channel":"ESCO","value":4071981.16},{"dept":"Direct Channel","channel":"Project","value":3893409.57},{"dept":"Installation","channel":"Installation","value":3481908.5},{"dept":"Dealer - IR","channel":"B2C","value":2002784.36},{"dept":"ACS - West","channel":"Project","value":1997590.45},{"dept":"Employee/Cash/Others","channel":"B2C","value":1802229.6},{"dept":"Dealer - OR","channel":"B2C","value":1109796.39},{"dept":"AMC","channel":"AFS","value":699181.82},{"dept":"ACS - EAST","channel":"Project","value":461107.25}],"jan":[{"dept":"Central Projects","channel":"Project","value":13890107.209999999},{"dept":"Dealer - OR","channel":"B2C","value":13378522.44},{"dept":"WEST","channel":"Project","value":13007110.1},{"dept":"Dealer - IR","channel":"B2C","value":12903289.19},{"dept":"ACS","channel":"Project","value":8188942.44},{"dept":"SEC","channel":"AFS","value":8171622.0},{"dept":"Direct Channel","channel":"Project","value":4917071.87},{"dept":"Installation","channel":"Installation","value":4888085.96},{"dept":"ESCO","channel":"ESCO","value":4161850.21},{"dept":"ACS - West","channel":"Project","value":3074941.37},{"dept":"Employee/Cash/Others","channel":"B2C","value":2245211.91},{"dept":"EAST","channel":"Project","value":1644992.47},{"dept":"ACS - EAST","channel":"Project","value":489241.52},{"dept":"AMC","channel":"AFS","value":363115.74},{"dept":"ACS-North","channel":"Project","value":18868.9}],"feb":[{"dept":"Dealer - OR","channel":"B2C","value":24695547.21},{"dept":"Dealer - IR","channel":"B2C","value":13651745.209999999},{"dept":"Central Projects","channel":"Project","value":11685121.709999999},{"dept":"WEST","channel":"Project","value":9812619.94},{"dept":"ACS","channel":"Project","value":5004315.45},{"dept":"Installation","channel":"Installation","value":4968653.47},{"dept":"Direct Channel","channel":"Project","value":3793363.63},{"dept":"ESCO","channel":"ESCO","value":3638345.96},{"dept":"SEC","channel":"AFS","value":3106985.1},{"dept":"Employee/Cash/Others","channel":"B2C","value":1920152.21},{"dept":"EAST","channel":"Project","value":1445299.81},{"dept":"ACS - West","channel":"Project","value":1410570.0},{"dept":"ACS - EAST","channel":"Project","value":806514.49},{"dept":"AMC","channel":"AFS","value":508179.83999999997},{"dept":"ACS-North","channel":"Project","value":281571.49}]};
+const REGION={"ytd":[{"Region Descr":"Central","B2C":37729449.44,"Project":96268762.6,"AFS":4244333.74,"ESCO":14114997.43,"Installation":17476037.9},{"Region Descr":"East","B2C":19858350.31,"Project":20529520.65,"AFS":13729239.86,"ESCO":0.0,"Installation":85384.66},{"Region Descr":"North","B2C":498622.76,"Project":1506923.28,"AFS":5611365.0,"ESCO":0.0,"Installation":0.0},{"Region Descr":"South","B2C":923055.44,"Project":127711.46,"AFS":1995372.09,"ESCO":0.0,"Installation":0.0},{"Region Descr":"West","B2C":21551210.42,"Project":45049979.47,"AFS":60462.5,"ESCO":0.0,"Installation":0.0}],"nov":[{"Region Descr":"Central","B2C":2753396.36,"Project":25608193.82,"AFS":1203187.19,"ESCO":2242820.1,"Installation":4167245.19},{"Region Descr":"East","B2C":562766.57,"Project":7264561.74,"AFS":3658018.66,"ESCO":0.0,"Installation":55529.44},{"Region Descr":"North","B2C":247180.79,"Project":846918.07,"AFS":0.0,"ESCO":0.0,"Installation":0.0},{"Region Descr":"South","B2C":385187.18,"Project":0.0,"AFS":616396.0,"ESCO":0.0,"Installation":0.0},{"Region Descr":"West","B2C":2902878.95,"Project":9334440.74,"AFS":0.0,"ESCO":0.0,"Installation":0.0}],"dec":[{"Region Descr":"Central","B2C":2960019.82,"Project":24679289.03,"AFS":787154.56,"ESCO":4071981.16,"Installation":3481908.5},{"Region Descr":"East","B2C":186389.59,"Project":7626999.18,"AFS":2906754.1,"ESCO":0.0,"Installation":0.0},{"Region Descr":"North","B2C":96217.28,"Project":64167.13,"AFS":4115115.0,"ESCO":0.0,"Installation":0.0},{"Region Descr":"South","B2C":74020.62,"Project":127711.46,"AFS":169245.0,"ESCO":0.0,"Installation":0.0},{"Region Descr":"West","B2C":1598163.04,"Project":8459963.89,"AFS":35000.0,"ESCO":0.0,"Installation":0.0}],"jan":[{"Region Descr":"Central","AFS":1492772.15,"B2C":6100374.69,"ESCO":4161850.21,"Installation":4858230.74,"Project":26380902.27},{"Region Descr":"East","AFS":4715252.0,"B2C":14276037.18,"ESCO":0.0,"Installation":29855.22,"Project":2459614.72},{"Region Descr":"North","AFS":1496250.0,"B2C":107739.77,"ESCO":0.0,"Installation":0.0,"Project":270354.48},{"Region Descr":"South","AFS":829151.09,"B2C":348802.28,"ESCO":0.0,"Installation":0.0,"Project":0.0},{"Region Descr":"West","AFS":1312.5,"B2C":7694069.62,"ESCO":0.0,"Installation":0.0,"Project":16120404.41}],"feb":[{"Region Descr":"Central","AFS":761219.84,"B2C":25915658.57,"ESCO":3638345.96,"Installation":4968653.47,"Project":19600377.48},{"Region Descr":"East","AFS":2449215.1,"B2C":4833156.97,"ESCO":0.0,"Installation":0.0,"Project":3178345.01},{"Region Descr":"North","AFS":0.0,"B2C":47484.920000000006,"ESCO":0.0,"Installation":0.0,"Project":325483.6},{"Region Descr":"South","AFS":380580.0,"B2C":115045.36,"ESCO":0.0,"Installation":0.0,"Project":0.0},{"Region Descr":"West","AFS":24150.0,"B2C":9356098.81,"ESCO":0.0,"Installation":0.0,"Project":11135170.43}]};
+const CAT={"ytd":{"all":[{"cat":"Multi-V","value":63786248},{"cat":"Split Inverter","value":48469893},{"cat":"Concealed","value":47556703},{"cat":"Split on/off","value":23628215},{"cat":"Unitary Package","value":19637436},{"cat":"installation","value":17507601},{"cat":"AHU","value":16074868},{"cat":"Free Standing","value":11470476},{"cat":"Accessories","value":8070436},{"cat":"Cassette","value":5719314},{"cat":"CAC Ducted","value":1250339},{"cat":"Miscellaneous","value":441399},{"cat":"Window On/Off","value":255118}],"B2C":[{"cat":"Split Inverter","value":33747064},{"cat":"Split on/off","value":19971569},{"cat":"Concealed","value":11480189},{"cat":"Free Standing","value":9541989},{"cat":"Cassette","value":1850655},{"cat":"Unitary Package","value":1589361},{"cat":"Multi-V","value":1008674},{"cat":"Accessories","value":652777},{"cat":"CAC Ducted","value":477915},{"cat":"Window On/Off","value":253283},{"cat":"Miscellaneous","value":28477}],"Project":[{"cat":"Multi-V","value":62777573},{"cat":"Concealed","value":36071760},{"cat":"Unitary Package","value":16651986},{"cat":"AHU","value":16074868},{"cat":"Split Inverter","value":14690022},{"cat":"Accessories","value":7403388},{"cat":"Cassette","value":3855884},{"cat":"Split on/off","value":3421387},{"cat":"Free Standing","value":1443567},{"cat":"CAC Ducted","value":733527},{"cat":"Miscellaneous","value":359101},{"cat":"Window On/Off","value":1835}],"AFS":[{"cat":"Split on/off","value":235259},{"cat":"Unitary Package","value":94831},{"cat":"Free Standing","value":39200},{"cat":"CAC Ducted","value":38898},{"cat":"Split Inverter","value":34688},{"cat":"Cassette","value":12775},{"cat":"Concealed","value":4754},{"cat":"Accessories","value":1385}],"ESCO":[{"cat":"Unitary Package","value":1347840},{"cat":"Free Standing","value":445720},{"cat":"Accessories","value":14590},{"cat":"Multi-V","value":1691}],"Installation":[{"cat":"installation","value":17507601},{"cat":"Miscellaneous","value":53821}]},"nov":{"all":[{"cat":"Multi-V","value":13744012},{"cat":"Concealed","value":10938293},{"cat":"Split Inverter","value":8643690},{"cat":"Unitary Package","value":5170247},{"cat":"AHU","value":4689411},{"cat":"installation","value":4222775},{"cat":"Split on/off","value":2617228},{"cat":"Accessories","value":2485672},{"cat":"Cassette","value":1344984},{"cat":"Free Standing","value":576701},{"cat":"Miscellaneous","value":72143}],"B2C":[{"cat":"Split Inverter","value":2589196},{"cat":"Split on/off","value":2210470},{"cat":"Concealed","value":1295652},{"cat":"Cassette","value":286302},{"cat":"Free Standing","value":235968},{"cat":"Unitary Package","value":93398},{"cat":"Accessories","value":77394},{"cat":"Multi-V","value":60215},{"cat":"Miscellaneous","value":28477}],"Project":[{"cat":"Multi-V","value":13682106},{"cat":"Concealed","value":9642641},{"cat":"Split Inverter","value":6056375},{"cat":"Unitary Package","value":5017293},{"cat":"AHU","value":4689411},{"cat":"Accessories","value":2392907},{"cat":"Cassette","value":1058682},{"cat":"Free Standing","value":301533},{"cat":"Split on/off","value":171499},{"cat":"Miscellaneous","value":43666}],"AFS":[{"cat":"Split on/off","value":235259},{"cat":"Free Standing","value":39200},{"cat":"Accessories","value":780}],"ESCO":[{"cat":"Unitary Package","value":59556},{"cat":"Accessories","value":14590},{"cat":"Multi-V","value":1691}],"Installation":[{"cat":"installation","value":4222775}]},"dec":{"all":[{"cat":"Multi-V","value":17050146},{"cat":"Concealed","value":10598957},{"cat":"Unitary Package","value":4961325},{"cat":"AHU","value":3881844},{"cat":"installation","value":3481908},{"cat":"Split Inverter","value":2763727},{"cat":"Split on/off","value":2657108},{"cat":"Cassette","value":1777862},{"cat":"Accessories","value":1621674},{"cat":"Free Standing","value":1592596},{"cat":"CAC Ducted","value":340193},{"cat":"Miscellaneous","value":112537},{"cat":"Window On/Off","value":64576}],"B2C":[{"cat":"Unitary Package","value":1176640},{"cat":"Concealed","value":777519},{"cat":"Free Standing","value":761893},{"cat":"Split on/off","value":567246},{"cat":"Split Inverter","value":556489},{"cat":"Multi-V","value":481782},{"cat":"Cassette","value":469389},{"cat":"Window On/Off","value":64576},{"cat":"CAC Ducted","value":51056},{"cat":"Accessories","value":20645}],"Project":[{"cat":"Multi-V","value":16568364},{"cat":"Concealed","value":9821438},{"cat":"AHU","value":3881844},{"cat":"Unitary Package","value":2773243},{"cat":"Split Inverter","value":2177796},{"cat":"Split on/off","value":2089862},{"cat":"Accessories","value":1602128},{"cat":"Cassette","value":1295698},{"cat":"Free Standing","value":384983},{"cat":"CAC Ducted","value":250239},{"cat":"Miscellaneous","value":112537}],"AFS":[{"cat":"CAC Ducted","value":38898},{"cat":"Split Inverter","value":29441},{"cat":"Unitary Package","value":23364},{"cat":"Cassette","value":12775},{"cat":"Accessories","value":605}],"ESCO":[{"cat":"Unitary Package","value":988078},{"cat":"Free Standing","value":445720}],"Installation":[{"cat":"installation","value":3481908}]},"jan":{"all":[{"cat":"Multi-V","value":17129466},{"cat":"Concealed","value":16270354},{"cat":"Split Inverter","value":16195121},{"cat":"Split on/off","value":7214761},{"cat":"AHU","value":5482479},{"cat":"Unitary Package","value":5252308},{"cat":"installation","value":4870630},{"cat":"Free Standing","value":2887441},{"cat":"Accessories","value":1683497},{"cat":"Cassette","value":1175657},{"cat":"CAC Ducted","value":548331},{"cat":"Window On/Off","value":166840},{"cat":"Miscellaneous","value":76439}],"B2C":[{"cat":"Split Inverter","value":11624683},{"cat":"Concealed","value":6580342},{"cat":"Split on/off","value":6421565},{"cat":"Free Standing","value":2345822},{"cat":"Cassette","value":537714},{"cat":"CAC Ducted","value":290789},{"cat":"Unitary Package","value":289599},{"cat":"Multi-V","value":269750},{"cat":"Window On/Off","value":165005},{"cat":"Accessories","value":4931}],"Project":[{"cat":"Multi-V","value":16861407},{"cat":"Concealed","value":9690012},{"cat":"AHU","value":5482479},{"cat":"Unitary Package","value":4662502},{"cat":"Split Inverter","value":4565191},{"cat":"Accessories","value":1678567},{"cat":"Split on/off","value":793196},{"cat":"Cassette","value":637943},{"cat":"Free Standing","value":541618},{"cat":"CAC Ducted","value":257543},{"cat":"Miscellaneous","value":58983},{"cat":"Window On/Off","value":1835}],"AFS":[{"cat":"Split Inverter","value":5247}],"ESCO":[{"cat":"Unitary Package","value":300206}],"Installation":[{"cat":"installation","value":4870630},{"cat":"Miscellaneous","value":17456}]},"feb":{"all":[{"cat":"Split Inverter","value":20867355},{"cat":"Multi-V","value":15862624},{"cat":"Split on/off","value":11139118},{"cat":"Concealed","value":9749099},{"cat":"Free Standing","value":6413738},{"cat":"installation","value":4932288},{"cat":"Unitary Package","value":4253556},{"cat":"Accessories","value":2279593},{"cat":"AHU","value":2021134},{"cat":"Cassette","value":1420811},{"cat":"CAC Ducted","value":361815},{"cat":"Miscellaneous","value":180280},{"cat":"Window On/Off","value":23702}],"B2C":[{"cat":"Split Inverter","value":18976696},{"cat":"Split on/off","value":10772288},{"cat":"Free Standing","value":6198306},{"cat":"Concealed","value":2826676},{"cat":"Cassette","value":557250},{"cat":"Accessories","value":549807},{"cat":"Multi-V","value":196927},{"cat":"CAC Ducted","value":136070},{"cat":"Unitary Package","value":29724},{"cat":"Window On/Off","value":23702}],"Project":[{"cat":"Multi-V","value":15665696},{"cat":"Concealed","value":6917669},{"cat":"Unitary Package","value":4198948},{"cat":"AHU","value":2021134},{"cat":"Split Inverter","value":1890660},{"cat":"Accessories","value":1729786},{"cat":"Cassette","value":863561},{"cat":"Split on/off","value":366830},{"cat":"CAC Ducted","value":225745},{"cat":"Free Standing","value":215433},{"cat":"Miscellaneous","value":143915}],"AFS":[{"cat":"Unitary Package","value":71467},{"cat":"Concealed","value":4754}],"ESCO":[],"Installation":[{"cat":"installation","value":4932288},{"cat":"Miscellaneous","value":36365}]}};
+</script>
+<script>
+// ════════════════ CONSTANTS ════════════════
+const CHANNELS = ['B2C','Project','AFS','ESCO','Installation'];
+const C  = {B2C:'#22d3a0',Project:'#60a5fa',AFS:'#fbbf24',ESCO:'#c084fc',Installation:'#fb923c'};
+const CL = {B2C:'rgba(34,211,160,.14)',Project:'rgba(96,165,250,.14)',AFS:'rgba(251,191,36,.14)',ESCO:'rgba(192,132,252,.14)',Installation:'rgba(251,146,60,.14)'};
+const CH_ID = {B2C:'b2c',Project:'proj',AFS:'afs',ESCO:'esco',Installation:'inst'};
+const ID_CH = {b2c:'B2C',proj:'Project',afs:'AFS',esco:'ESCO',inst:'Installation'};
+const CAT_COLORS = ['#60a5fa','#22d3a0','#fbbf24','#c084fc','#fb923c','#f87171','#34d399','#a78bfa','#fcd34d','#67e8f9'];
+
+// ════════════════ UTILS ════════════════
+const fmt = n => {
+  const a=Math.abs(n), s=n<0?'-':'';
+  if(a>=1e9) return s+(a/1e9).toFixed(2)+'B';
+  if(a>=1e6) return s+(a/1e6).toFixed(2)+'M';
+  if(a>=1e3) return s+(a/1e3).toFixed(1)+'K';
+  return s+Math.round(a).toLocaleString();
+};
+const fmtFull = n => Math.abs(Math.round(n)).toLocaleString();
+const pct = (v,t) => t ? ((v/t)*100).toFixed(1) : '0.0';
+const tip = {backgroundColor:'#1c2333',borderColor:'rgba(255,255,255,.15)',borderWidth:1,
+  titleColor:'#f0f4ff',bodyColor:'#8c9ab5',
+  titleFont:{family:'Inter',size:12,weight:'700'},bodyFont:{family:'Roboto Mono',size:11},
+  padding:12,cornerRadius:8};
+
+document.getElementById('hdate').textContent =
+  new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+// ════════════════ STATE ════════════════
+let period='ytd', activeCh='all';
+let dailyChart, donutChart, catChart;
+
+// ════════════════ HELPERS ════════════════
+const getActiveCH = () => activeCh==='all' ? null : ID_CH[activeCh];
+const getKPISel   = () => { const ch=getActiveCH(); return ch ? KPI[period][ch] : KPI[period].all; };
+const getKPIAll   = () => KPI[period].all;
+
+// ════════════════ RENDER KPI ════════════════
+function renderKPI() {
+  const sel = getKPISel(), all = getKPIAll(), ch = getActiveCH();
+  const prev = period==='feb' ? KPI.jan.all : period==='jan' ? KPI.dec.all : period==='dec' ? KPI.nov.all : null;
+  const periodLbl = {ytd:'YTD 누적',jan:'1월',feb:'2월',dec:'12월',nov:'11월'}[period];
+
+  document.getElementById('s-gross').textContent = 'SAR '+fmtFull(sel.gross);
+  document.getElementById('s-ret').textContent   = sel.returns===0 ? 'SAR 0' : '(SAR '+fmtFull(Math.abs(sel.returns))+')';
+  document.getElementById('s-net').textContent   = 'SAR '+fmtFull(sel.net);
+  document.getElementById('s-net-sub').textContent = periodLbl+' 순매출'+(ch?' ('+ch+')':'');
+
+  CHANNELS.forEach(id => {
+    const cid = CH_ID[id], val = all.by_channel[id]||0;
+    const isAct = activeCh==='all' || activeCh===cid;
+    document.getElementById('kpi-'+cid).style.opacity = isAct ? '1' : '0.25';
+    document.getElementById('k-'+cid).textContent     = 'SAR '+fmt(val);
+    document.getElementById('k-'+cid+'-p').textContent = pct(val,all.net)+'% of total';
+    const dEl = document.getElementById('k-'+cid+'-d');
+    if(prev) {
+      const pv=prev.by_channel[id]||0, diff=val-pv;
+      const dp = pv ? ((diff/Math.abs(pv))*100).toFixed(1) : '0.0';
+      dEl.innerHTML = diff>=0
+        ? `<span class="up">▲ ${fmt(diff)} (${dp}%)</span>`
+        : `<span class="down">▼ ${fmt(Math.abs(diff))} (${Math.abs(parseFloat(dp))}%)</span>`;
+    } else { dEl.innerHTML=''; }
+  });
+}
+
+// ════════════════ CATEGORY ════════════════
+function buildCatChart() {
+  const ch    = getActiveCH();
+  const src   = ch ? (CAT[period][ch]||[]) : CAT[period].all;
+  const items = src.filter(d=>d.value>0).slice(0,10);
+  const total = items.reduce((s,d)=>s+d.value,0);
+  const labels= items.map(d=>d.cat);
+  const vals  = items.map(d=>d.value);
+  const colors= items.map((_,i)=>CAT_COLORS[i%CAT_COLORS.length]);
+
+  document.getElementById('cat-sub').textContent =
+    {ytd:'YTD 누적',jan:'1월 2026',feb:'2월 2026',dec:'12월 2025',nov:'11월 2025'}[period]+(ch?' · '+ch:'')+' · 순매출 기준';
+
+  if(catChart){ catChart.data.labels=labels; catChart.data.datasets[0].data=vals; catChart.data.datasets[0].backgroundColor=colors; catChart.update(); }
+  else {
+    catChart = new Chart(document.getElementById('catChart').getContext('2d'),{
+      type:'bar',
+      data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...tip,callbacks:{label:c=>` SAR ${fmtFull(c.raw)}  (${pct(c.raw,total)}%)`}}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,.05)'},border:{display:false},ticks:{color:'#4e5d78',font:{size:10,family:'Roboto Mono'},callback:v=>fmt(v)}},
+          y:{grid:{display:false},border:{display:false},ticks:{color:'#8c9ab5',font:{size:12,family:'Inter',weight:'600'}}}
+        }}
+    });
+  }
+
+  document.getElementById('cat-bars').innerHTML = items.map((d,i)=>`
+    <div class="cat-bar-row">
+      <div class="cat-name" title="${d.cat}">${d.cat}</div>
+      <div class="cat-track"><div class="cat-fill" style="width:${pct(d.value,total)}%;background:${colors[i]};opacity:.85;"></div></div>
+      <div class="cat-pct">${pct(d.value,total)}%</div>
+      <div class="cat-val">SAR ${fmt(d.value)}</div>
+    </div>`).join('');
+}
+
+// ════════════════ DAILY ════════════════
+function buildDailyChart() {
+  const rows = DAILY[period];
+  document.getElementById('daily-title').textContent = {jan:'일별 순매출 추이 — 1월 2026',feb:'일별 순매출 추이 — 2월 2026',dec:'일별 순매출 추이 — 12월 2025',nov:'일별 순매출 추이 — 11월 2025',ytd:'일별 순매출 추이 — Nov 2025 – Feb 2026'}[period];
+  document.getElementById('daily-sub').textContent   = {jan:'January 2026',feb:'February 2026',dec:'December 2025',nov:'November 2025',ytd:'November 2025 – February 2026'}[period];
+  const labels = rows.map(r=>r['Invoice Date'].slice(5));
+  const ds = CHANNELS.map(ch=>({
+    label:ch, data:rows.map(r=>(activeCh==='all'||activeCh===CH_ID[ch])?(r[ch]||0):0),
+    backgroundColor:C[ch]+'bb', borderRadius:3, stack:'s'
+  }));
+  if(dailyChart){ dailyChart.data.labels=labels; dailyChart.data.datasets=ds; dailyChart.update(); return; }
+  dailyChart = new Chart(document.getElementById('dailyChart').getContext('2d'),{
+    type:'bar', data:{labels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...tip,callbacks:{label:c=>c.raw!==0?` ${c.dataset.label}: SAR ${fmtFull(c.raw)}`:null,filter:i=>i.raw!==0}}},
+      scales:{
+        x:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:'#4e5d78',font:{size:10,family:'Roboto Mono'}}},
+        y:{stacked:true,grid:{color:'rgba(255,255,255,.05)'},border:{display:false},ticks:{color:'#4e5d78',font:{size:10,family:'Roboto Mono'},callback:v=>fmt(v)}}
+      }}
+  });
+}
+
+// ════════════════ MoM ════════════════
+function buildMoM() {
+  const maxV = Math.max(...CHANNELS.flatMap(ch=>[KPI.jan.all.by_channel[ch],KPI.feb.all.by_channel[ch]]));
+  const ch   = getActiveCH();
+  ['jan','feb'].forEach(m=>{
+    const kAll=KPI[m].all, kSel=ch?KPI[m][ch]:kAll;
+    let html=`<div class="mom-label">${m==='jan'?'January 2026':m==='feb'?'February 2026':'December 2025'}</div>
+      <div><div class="mom-net-lbl">NET SALES${ch?' · '+ch:''}</div><div class="mom-net">SAR ${fmt(kSel.net)}</div></div>
+      <div class="mom-rows">`;
+    CHANNELS.forEach(id=>{
+      const v=kAll.by_channel[id]||0, w=Math.max(2,Math.round((v/maxV)*100)), p=pct(v,kAll.net);
+      const isAct=activeCh==='all'||CH_ID[id]===activeCh;
+      html+=`<div style="opacity:${isAct?'1':'0.22'};transition:opacity .2s;">
+        <div class="mom-row-top">
+          <span class="mom-ch-name" style="color:${C[id]}">${id}</span>
+          <div class="mom-ch-vals"><span class="mom-ch-pct">${p}%</span><span class="mom-ch-val" style="color:${C[id]}">SAR ${fmt(v)}</span></div>
+        </div>
+        <div class="mom-track"><div class="mom-fill" style="width:${w}%;background:${C[id]};opacity:.8;"></div></div>
+      </div>`;
+    });
+    html+='</div>';
+    document.getElementById('mom-'+m).innerHTML=html;
+  });
+}
+
+// ════════════════ DEPT ════════════════
+function buildDeptTable() {
+  const ch=getActiveCH(), src=DEPT[period];
+  const rows = ch ? src.filter(d=>d.channel===ch) : src;
+  const maxV = rows.length ? Math.max(...rows.map(d=>d.value)) : 1;
+  document.getElementById('dept-sub').textContent =
+    {ytd:'YTD 누적',jan:'1월 2026',feb:'2월 2026',dec:'12월 2025',nov:'11월 2025'}[period]+' · '+(ch||'전체 채널');
+  document.getElementById('dept-tbody').innerHTML = rows.slice(0,12).map((d,i)=>`
+    <tr>
+      <td class="td-rank">${i+1}</td>
+      <td><span class="ch-tag" style="background:${CL[d.channel]};color:${C[d.channel]};">${d.channel}</span></td>
+      <td class="td-name">${d.dept}</td>
+      <td class="td-bar"><div class="dbar-track"><div class="dbar-fill" style="width:${Math.round(d.value/maxV*100)}%;background:${C[d.channel]};opacity:.75;"></div></div></td>
+      <td class="td-val">SAR ${fmt(d.value)}</td>
+    </tr>`).join('');
+}
+
+// ════════════════ DONUT ════════════════
+function buildDonut() {
+  const kAll=getKPIAll();
+  document.getElementById('share-sub').textContent = {ytd:'YTD 누적',jan:'1월 2026',feb:'2월 2026',dec:'12월 2025',nov:'11월 2025'}[period]+' · 순매출 기준';
+  const vals=CHANNELS.map(ch=>(activeCh==='all'||activeCh===CH_ID[ch])?(kAll.by_channel[ch]||0):0);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const bgC=CHANNELS.map((ch,i)=>vals[i]>0?C[ch]+'dd':'transparent');
+  if(donutChart){donutChart.data.datasets[0].data=vals;donutChart.data.datasets[0].backgroundColor=bgC;donutChart.update();}
+  else{
+    donutChart=new Chart(document.getElementById('donutChart').getContext('2d'),{
+      type:'doughnut',
+      data:{labels:CHANNELS,datasets:[{data:vals,backgroundColor:bgC,borderWidth:3,borderColor:'#151a24',hoverOffset:6}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+        plugins:{legend:{display:false},tooltip:{...tip,callbacks:{
+          label:c=>c.raw>0?` ${c.label}: SAR ${fmtFull(c.raw)} (${pct(c.raw,total||1)}%)`:null,
+          filter:i=>i.raw>0}}}}
+    });
+  }
+  document.getElementById('share-list').innerHTML=CHANNELS.map(ch=>{
+    const v=kAll.by_channel[ch]||0, isAct=activeCh==='all'||CH_ID[ch]===activeCh, p=pct(v,kAll.net);
+    return `<div class="share-row" style="opacity:${isAct?'1':'0.22'};">
+      <div class="share-hd"><span class="share-ch" style="color:${C[ch]}">${ch}</span><span class="share-val">${p}%&nbsp;&nbsp;SAR ${fmt(v)}</span></div>
+      <div class="share-track"><div class="share-fill" style="width:${p}%;background:${C[ch]};opacity:.8;"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════ REGION ════════════════
+function buildRegion() {
+  const activeCHS = activeCh==='all' ? CHANNELS : [ID_CH[activeCh]].filter(Boolean);
+  document.getElementById('region-sub').textContent = {ytd:'YTD 누적',jan:'1월 2026',feb:'2월 2026',dec:'12월 2025',nov:'11월 2025'}[period]+' 기준';
+  const sorted=[...REGION[period]].sort((a,b)=>
+    activeCHS.reduce((s,ch)=>s+(b[ch]||0),0)-activeCHS.reduce((s,ch)=>s+(a[ch]||0),0));
+  document.getElementById('region-grid').innerHTML=sorted.map(r=>{
+    const total=activeCHS.reduce((s,ch)=>s+(r[ch]||0),0);
+    if(total<=0) return '';
+    const segs=activeCHS.filter(ch=>(r[ch]||0)>0).map(ch=>{
+      const ratio=((r[ch]/total)*100).toFixed(1);
+      return `<div class="rg-seg" style="flex:${ratio};background:${C[ch]};opacity:.85;" title="${ch}: SAR ${fmtFull(r[ch]||0)} (${ratio}%)"></div>`;
+    }).join('');
+    return `<div class="rg-row"><div class="rg-name">${r['Region Descr']}</div><div class="rg-stack">${segs}</div><div class="rg-total">SAR ${fmt(total)}</div></div>`;
+  }).join('');
+}
+
+// ════════════════ CONTROLS ════════════════
+function setPeriod(p) {
+  period=p;
+  document.querySelectorAll('.ptab').forEach(el=>{el.classList.remove('on');if(el.dataset.p===p)el.classList.add('on');});
+  renderAll();
+}
+function setCh(ch) {
+  activeCh=ch;
+  document.querySelectorAll('.chtab').forEach(el=>{
+    ['all','b2c','proj','afs','esco','inst'].forEach(k=>el.classList.remove('a-'+k));
+    if(el.dataset.ch===ch) el.classList.add('a-'+ch);
+  });
+  renderAll();
+}
+function renderAll() {
+  renderKPI(); buildCatChart(); buildDailyChart();
+  buildMoM(); buildDeptTable(); buildDonut(); buildRegion();
+}
+
+// ════════════════ INIT ════════════════
+renderAll();
+</script>
+</body>
+</html>
