@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGESR Profit Center Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{
+  --bg:#060b14;--s1:#0d1520;--s2:#111d2e;--s3:#152034;
+  --b1:#1a2d45;--b2:#243d5c;
+  --rac:#38bdf8;--sac:#fb923c;--tot:#a78bfa;
+  --grn:#34d399;--red:#f87171;--yel:#fbbf24;--amb:#f59e0b;
+  --t1:#e2e8f0;--t2:#94a3b8;--t3:#64748b;--t4:#475569;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{font-family:var(--sans);background:var(--bg);color:var(--t1);min-height:100vh;}
+.topbar{height:52px;background:var(--s1);border-bottom:1px solid var(--b1);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{width:30px;height:30px;border-radius:6px;background:linear-gradient(135deg,#38bdf8,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;}
+.brand-name{font-size:13px;font-weight:700;}
+.brand-sub{font-size:9px;color:var(--t4);font-family:var(--mono);margin-top:1px;}
+.page-tabs{display:flex;gap:2px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:3px;}
+.page-tab{padding:5px 16px;border:none;border-radius:5px;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:600;background:transparent;color:var(--t3);transition:all .18s;}
+.page-tab.active{background:var(--s3);color:var(--t1);border:1px solid var(--b2);}
+.page-tab:hover:not(.active){color:var(--t2);}
+.cbar{background:var(--s1);border-bottom:1px solid var(--b1);padding:8px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:52px;z-index:200;}
+.cg{display:flex;align-items:center;gap:7px;}
+.clabel{font-size:9px;color:var(--t4);text-transform:uppercase;letter-spacing:1px;font-weight:600;white-space:nowrap;}
+.csep{width:1px;height:20px;background:var(--b1);}
+.div-btns{display:flex;gap:2px;}
+.div-btn{padding:4px 11px;border:1px solid var(--b1);border-radius:5px;background:transparent;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);transition:all .15s;color:var(--t3);}
+.div-btn[data-d="RAC"].on{border-color:var(--rac);color:var(--rac);background:rgba(56,189,248,.08);}
+.div-btn[data-d="SAC"].on{border-color:var(--sac);color:var(--sac);background:rgba(251,146,60,.08);}
+.div-btn[data-d="TOT"].on{border-color:var(--tot);color:var(--tot);background:rgba(167,139,250,.08);}
+.div-btn:hover:not(.on){color:var(--t2);border-color:var(--b2);}
+.seg{display:flex;gap:2px;}
+.seg-btn{padding:4px 10px;border:1px solid var(--b1);border-radius:4px;background:transparent;color:var(--t3);cursor:pointer;font-size:10px;font-family:var(--mono);transition:all .15s;}
+.seg-btn.on{background:var(--s3);color:var(--t1);border-color:var(--b2);}
+.seg-btn:hover:not(.on){color:var(--t2);}
+select{background:var(--s2);border:1px solid var(--b1);border-radius:4px;color:var(--t2);padding:4px 8px;font-size:10px;font-family:var(--mono);cursor:pointer;outline:none;}
+select:focus{border-color:var(--b2);}
+.page{display:none;}
+.page.on{display:block;}
+.wrap{padding:18px 24px;max-width:1800px;margin:0 auto;}
+.mb{margin-bottom:13px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:16px 18px;}
+.card-t{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.pip{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+/* HERO */
+.hero-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:13px;}
+.hcard{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:16px 17px 14px;position:relative;overflow:hidden;}
+.hcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.hcard.c-rac::before{background:var(--rac);}
+.hcard.c-sac::before{background:var(--sac);}
+.hcard.c-tot::before{background:linear-gradient(90deg,var(--rac),var(--sac));}
+.hcard.c-grn::before{background:var(--grn);}
+.hcard.c-red::before{background:var(--red);}
+.hcard.c-yel::before{background:var(--yel);}
+.hcard.c-amb::before{background:var(--amb);}
+.h-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1.1px;font-weight:600;margin-bottom:8px;}
+.h-val{font-size:25px;font-weight:800;font-family:var(--mono);line-height:1;margin-bottom:3px;}
+.h-unit{font-size:9px;color:var(--t3);margin-bottom:8px;}
+.h-yoy-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.h-yoy-badge{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:4px;}
+.h-yoy-badge.pos{background:rgba(52,211,153,.14);color:var(--grn);}
+.h-yoy-badge.neg{background:rgba(248,113,113,.14);color:var(--red);}
+.h-yoy-badge.neu{background:rgba(100,116,139,.14);color:var(--t3);}
+.h-yoy-label{font-size:9px;color:var(--t3);}
+.h-prev{font-size:9px;color:var(--t4);font-family:var(--mono);}
+/* IMPL */
+.impl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:13px;}
+.impl-card{background:var(--s2);border:1px solid var(--b1);border-radius:9px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+.impl-hd{display:flex;align-items:center;gap:7px;}
+.impl-icon{font-size:14px;line-height:1;}
+.impl-title{font-size:10px;font-weight:700;}
+.impl-body{font-size:10px;color:var(--t2);line-height:1.55;}
+.impl-card.warn .impl-title{color:var(--red);}
+.impl-card.ok .impl-title{color:var(--grn);}
+.impl-card.caution .impl-title{color:var(--yel);}
+.impl-card.info .impl-title{color:var(--rac);}
+/* KPI */
+.kpi{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px;}
+.kpi.c-rac::before{background:var(--rac);}
+.kpi.c-sac::before{background:var(--sac);}
+.kpi.c-tot::before{background:var(--tot);}
+.kpi.c-grn::before{background:var(--grn);}
+.kpi.c-red::before{background:var(--red);}
+.kpi-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:5px;}
+.kpi-val{font-size:20px;font-weight:700;font-family:var(--mono);}
+.kpi-sub{font-size:9px;color:var(--t3);margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.badge{font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 5px;border-radius:3px;}
+.badge.pos{background:rgba(52,211,153,.13);color:var(--grn);}
+.badge.neg{background:rgba(248,113,113,.13);color:var(--red);}
+/* TABLE */
+.tbl-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:11px;overflow:hidden;margin-bottom:13px;}
+.tbl-hd{padding:10px 16px;border-bottom:1px solid var(--b1);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:700px;}
+thead th{padding:7px 12px;text-align:right;font-size:9px;color:var(--t3);font-weight:600;background:var(--s2);border-bottom:1px solid var(--b1);white-space:nowrap;font-family:var(--mono);}
+thead th:first-child{text-align:left;font-family:var(--sans);}
+thead th.h25{background:rgba(56,189,248,.05);color:var(--t2);}
+thead th.h24{background:rgba(251,191,36,.04);color:#fbbf2488;}
+thead th.hd{background:rgba(167,139,250,.04);color:#a78bfa88;}
+tbody td{padding:7px 12px;text-align:right;font-size:11px;font-family:var(--mono);border-bottom:1px solid rgba(26,45,69,.35);}
+tbody td:first-child{text-align:left;font-family:var(--sans);font-size:11px;}
+tbody tr:hover td{background:rgba(255,255,255,.012);}
+tbody tr.r-tot td{font-weight:700;background:rgba(255,255,255,.022);border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);font-size:11.5px;}
+tbody tr.r-sec td{background:var(--s2);color:var(--t4);font-size:8px;text-transform:uppercase;letter-spacing:1px;padding:4px 14px;font-family:var(--sans);}
+tbody tr.r-ind td:first-child{padding-left:24px;color:var(--t2);}
+.pos{color:var(--grn);}
+.neg{color:var(--red);}
+.dim{color:var(--t3);}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+/* Monthly table specifics */
+.mtbl td.cy{color:var(--t1);}
+.mtbl td.py{color:#fbbf2466;}
+.mtbl td.ytd-cy{background:rgba(56,189,248,.06);font-weight:700;color:var(--t1);}
+.mtbl td.ytd-py{background:rgba(251,191,36,.04);color:#fbbf2488;}
+.mtbl td.delta-v.pos{color:var(--grn);}
+.mtbl td.delta-v.neg{color:var(--red);}
+.mtbl td.delta-pct.pos{color:var(--grn);font-size:9px;}
+.mtbl td.delta-pct.neg{color:var(--red);font-size:9px;}
+.mtbl thead th.m-cy{background:rgba(56,189,248,.06);color:var(--t2);}
+.mtbl thead th.m-py{background:rgba(251,191,36,.04);color:#fbbf2466;}
+.mtbl thead th.m-ytd{background:rgba(56,189,248,.1);color:var(--rac);font-weight:700;}
+.mtbl thead th.m-delta{background:rgba(167,139,250,.05);color:#a78bfa88;}
+.mtbl thead th.m-sep{width:4px;padding:0;background:var(--b1);}
+.mtbl td.m-sep{width:4px;padding:0;background:rgba(26,45,69,.5);}
+/* Heatmap */
+.heat-pos-5{background:rgba(52,211,153,.22)!important;}
+.heat-pos-4{background:rgba(52,211,153,.16)!important;}
+.heat-pos-3{background:rgba(52,211,153,.10)!important;}
+.heat-pos-2{background:rgba(52,211,153,.06)!important;}
+.heat-pos-1{background:rgba(52,211,153,.03)!important;}
+.heat-neg-5{background:rgba(248,113,113,.22)!important;}
+.heat-neg-4{background:rgba(248,113,113,.16)!important;}
+.heat-neg-3{background:rgba(248,113,113,.10)!important;}
+.heat-neg-2{background:rgba(248,113,113,.06)!important;}
+.heat-neg-1{background:rgba(248,113,113,.03)!important;}
+/* sparkline */
+.spark{display:inline-flex;align-items:flex-end;gap:1px;height:14px;vertical-align:middle;margin-left:4px;}
+.spark span{width:3px;border-radius:1px;display:inline-block;min-height:2px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">LG</div>
+    <div><div class="brand-name">LGESR Profit Center</div><div class="brand-sub">Factory P&amp;L · YoY Dashboard · FY 2024–2025</div></div>
+  </div>
+  <div class="page-tabs">
+    <button class="page-tab active" onclick="setPage('exec')">📊 Executive View</button>
+    <button class="page-tab" onclick="setPage('detail')">🔍 Detail View</button>
+  </div>
+</div>
+<div class="cbar">
+  <div class="cg"><span class="clabel">Division</span>
+    <div class="div-btns">
+      <button class="div-btn on" data-d="RAC" onclick="setDiv('RAC')">RAC BD</button>
+      <button class="div-btn" data-d="SAC" onclick="setDiv('SAC')">SAC</button>
+      <button class="div-btn" data-d="TOT" onclick="setDiv('TOT')">Total</button>
+    </div>
+  </div>
+  <div class="csep"></div>
+  <div class="cg"><span class="clabel">Period</span>
+    <div class="seg" id="seg-type">
+      <button class="seg-btn on" data-v="ytd">YTD</button>
+      <button class="seg-btn" data-v="h">Half Year</button>
+      <button class="seg-btn" data-v="q">Quarter</button>
+      <button class="seg-btn" data-v="m">Month</button>
+    </div>
+    <select id="sub-sel" style="display:none;"></select>
+  </div>
+  <div class="csep"></div>
+  <div class="cg"><span class="clabel">Base Year</span>
+    <div class="seg" id="seg-year">
+      <button class="seg-btn on" data-v="2025">2025 vs 2024</button>
+      <button class="seg-btn" data-v="2024">2024 vs 2023*</button>
+    </div>
+  </div>
+  <span style="font-size:9px;color:var(--t4);font-family:var(--mono);">* 2023 estimated</span>
+</div>
+
+<div id="page-exec" class="page on">
+<div class="wrap">
+  <div class="hero-grid" id="exec-hero"></div>
+  <div class="impl-grid" id="exec-impl"></div>
+  <div class="mb" style="display:grid;grid-template-columns:1.6fr 1fr;gap:13px;">
+    <div class="card">
+      <div class="card-t"><span class="pip" id="pip-main"></span>Monthly Sales &amp; OI% — Current Year vs Prior Year</div>
+      <canvas id="c-exec-main" height="210"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--yel)"></span>YoY P&amp;L Variance — Key Lines</div>
+      <canvas id="c-exec-yoy" height="210"></canvas>
+    </div>
+  </div>
+  <div class="mb" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;">
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--grn)"></span>GP% &amp; OI% — Monthly Trend</div>
+      <canvas id="c-exec-margin" height="180"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--tot)"></span>Domestic vs Export — YoY</div>
+      <canvas id="c-exec-mix" height="180"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--red)"></span>Sales Deduction Rate — Monthly</div>
+      <canvas id="c-exec-sd" height="180"></canvas>
+    </div>
+  </div>
+</div>
+</div>
+
+<div id="page-detail" class="page">
+<div class="wrap">
+  <!-- KPI Strip -->
+  <div class="g4 mb" id="detail-kpis"></div>
+
+  <!-- Row 1: Sales trend + GP trend -->
+  <div class="mb" style="display:grid;grid-template-columns:1fr 1fr;gap:13px;">
+    <div class="card">
+      <div class="card-t"><span class="pip" id="pip-det"></span>Monthly Sales — CY vs PY</div>
+      <canvas id="c-det-sales" height="190"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--grn)"></span>Gross Profit — Monthly CY vs PY</div>
+      <canvas id="c-det-gp" height="190"></canvas>
+    </div>
+  </div>
+
+  <!-- Row 2: SG&A monthly stacked + OI monthly -->
+  <div class="mb" style="display:grid;grid-template-columns:1fr 1fr;gap:13px;">
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--red)"></span>SG&amp;A Monthly — Selling vs Admin CY vs PY</div>
+      <canvas id="c-det-sga-mo" height="190"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-t"><span class="pip" style="background:var(--yel)"></span>Operating Income — Monthly CY vs PY</div>
+      <canvas id="c-det-oi" height="190"></canvas>
+    </div>
+  </div>
+
+  <!-- Full Monthly P&L Table -->
+  <div class="tbl-wrap">
+    <div class="tbl-hd" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span>Monthly P&amp;L — All Accounts</span>
+        <span id="tbl-lbl" style="color:var(--t2);font-size:10px;font-family:var(--mono);"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:9px;color:var(--t4);">View:</span>
+        <div class="seg" id="tbl-view-seg">
+          <button class="seg-btn on" data-v="cy" onclick="setTblView('cy')">CY Only</button>
+          <button class="seg-btn" data-v="yoy" onclick="setTblView('yoy')">CY + PY</button>
+        </div>
+        <span style="font-size:9px;color:var(--t4);margin-left:8px;">Highlight:</span>
+        <div class="seg">
+          <button class="seg-btn on" data-v="none" onclick="setHeatmap('none')">Off</button>
+          <button class="seg-btn" data-v="heat" onclick="setHeatmap('heat')">Heatmap</button>
+        </div>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table id="det-monthly-table">
+        <thead id="det-thead"></thead>
+        <tbody id="det-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const QTRS={1:[0,1,2],2:[3,4,5],3:[6,7,8],4:[9,10,11]};
+const HALVES={1:[0,1,2,3,4,5],2:[6,7,8,9,10,11]};
+
+const D={
+  RAC:{
+    sales:   {y23:[7517267,8680515,7007565,7157592,4419084,5058099,4447420,4845620,8835663,7104696,3473130,2447478],y24:[8542349,9864404,7962233,8133627,5021686,5747840,5053886,5506386,10040526,8073518,3946284,2781134],y25:[11664626,8846036,7218583,10715525,8389266,5127080,3063329,4503745,4914000,4502922,1479823,4029221]},
+    dom:     {y23:[6799557,5128422,5209616,4704553,4081741,5015324,3826441,4625135,8259489,6081455,2880367,1637310],y24:[7726997,5827525,5920018,5346083,4638342,5699232,4348229,5255836,9385783,6910744,3273144,1860579],y25:[9586789,8337243,5251631,7818456,8109358,4794703,2824848,3507743,3586986,2360814,833808,1626621]},
+    exp:     {y23:[717110,3552453,1797150,2452639,337344,42775,620978,220484,576173,1023241,592363,810088],y24:[815353,4036878,2042216,2787544,383345,48608,705657,250550,654743,1162774,673140,920555],y25:[2077837,508793,1966953,2897069,279908,332377,238481,996003,1327014,2142108,646015,2402599]},
+    sd:      {y23:[-525700,-349437,-635298,-390845,-249553,463083,-634244,-212190,-1827470,-449150,-201476,-115870],y24:[-597386,-397087,-721930,-444142,-283583,526003,-720277,-240898,-2076671,-510398,-228950,-131671],y25:[-945907,-612492,-856345,-570897,-770400,-379065,-248863,-353784,-370742,-260128,89828,-479651]},
+    net:     {y23:[7017990,8362087,6444934,6832219,4220167,5571185,3856109,4679591,7063059,6718738,3327200,2373115],y24:[7976988,9502144,7323880,7763976,4795645,6331347,4381851,5317717,8026203,7634475,3780909,2696540],y25:[10748320,8311129,6452691,10190393,7638346,4834387,2923533,4171983,4613531,4266444,1595069,3600705]},
+    cogs:    {y23:[5978374,7125956,5295165,5464950,3517879,4092566,3518932,4156004,7299313,6035479,2945767,2000012],y24:[6793607,8097677,6017233,6210171,3997590,4650644,3998786,4723186,8294674,6858499,3347462,2272378],y25:[9387030,7210618,5256285,7853089,5984043,3823129,2351152,3171723,3930596,3546874,1346637,2940776]},
+    prime:   {y23:[5699366,6955289,5086178,5290973,3197867,3565706,3338693,3998778,6965817,5774791,2793383,2019504],y24:[6476552,7902828,5779293,6012469,3633668,4051939,3793969,4544066,7915701,6562717,3174299,2294891],y25:[9521555,6965707,5015594,7622814,5665975,3673442,2270205,3014437,3531305,3149856,1094606,2614976]},
+    royalty: {y23:[203996,153505,154226,141338,122475,152874,112264,139032,247483,182721,86800,-102874],y24:[231814,174437,175257,160612,139176,173721,127573,157991,281231,207638,98637,-116903],y25:[255962,226350,151812,204766,224373,132001,84168,97744,97652,63652,23318,42846]},
+    gp:      {y23:[1041141,1554730,1712680,1692640,901203,1478218,928488,688627,1536350,1069217,527514,448177],y24:[1183342,1766466,1946000,1923455,1024095,1680703,1055100,782531,1745852,1215019,599447,509156],y25:[1331689,1022926,1105954,2291538,1634823,924886,463314,978238,612662,695920,223014,608794]},
+    gp_r:    {y23:[.1386,.1789,.2444,.2365,.2038,.2923,.2087,.1421,.1738,.1505,.152,.1832],y24:[.1385,.1789,.2444,.2365,.2038,.2923,.2087,.1421,.1738,.1505,.152,.1833],y25:[.1142,.1156,.1532,.2139,.1949,.1804,.1512,.2172,.1247,.1545,.1507,.1511]},
+    sga:     {y23:[624821,598896,651446,604112,384722,527024,443562,380067,702398,611479,318757,238710],y24:[710024,680563,740280,686491,437093,598891,504048,431803,797726,694682,362133,271261],y25:[876978,639048,527350,1059060,662082,427399,460178,545059,563007,696527,388803,560580]},
+    sga_sell:{y23:[341343,330097,353848,331144,215160,287584,245552,209432,380424,334048,175296,132000],y24:[387890,375110,402100,376300,244500,326800,278900,237900,432300,379600,199200,150000],y25:[484300,355200,295800,584100,369500,236500,255800,300600,311500,383900,215700,309400]},
+    sga_adm: {y23:[158400,147840,164560,151360,98560,133760,111760,95920,177760,154880,80080,64240],y24:[180000,168000,187000,172000,112000,152000,127000,109000,202000,176000,91000,73000],y25:[222000,161000,133000,268000,167000,108000,116000,138000,141000,173000,98000,140000]},
+    // Selling sub-items
+    sga_adv:  {y23:[89800,86400,92600,86800,56400,75300,64400,54900,99700,87700,45900,34600],y24:[102100,98200,105200,98700,64100,85600,73200,62400,113300,99700,52200,39300],y25:[127000,93100,77600,153200,96900,62000,67100,78800,81700,100700,56600,81200]},
+    sga_promo:{y23:[92600,89100,95500,89500,58200,77600,66400,56600,102800,90400,47300,35700],y24:[105200,101300,108500,101700,66100,88300,75500,64300,116900,102800,53700,40600],y25:[131100,96100,80000,158000,99900,64000,69200,81300,84300,103900,58400,83800]},
+    sga_labor_s:{y23:[74900,72100,77200,72400,47000,62800,53700,45700,83100,73100,38200,28800],y24:[85100,82000,87700,82200,53400,71400,61000,51900,94400,83000,43400,32700],y25:[105900,77700,64700,127800,80800,51800,56000,65800,68200,84100,47200,67800]},
+    sga_trans: {y23:[42100,40600,43400,40700,26500,35300,30200,25700,46700,41100,21500,16200],y24:[47800,46200,49300,46200,30100,40100,34300,29200,53100,46700,24400,18400],y25:[59500,43700,36400,71800,45400,29100,31500,37000,38400,47300,26500,38100]},
+    sga_comm:  {y23:[31700,30500,32600,30600,19900,26500,22700,19300,35100,30900,16100,12200],y24:[36000,34700,37100,34800,22600,30100,25800,21900,39800,35100,18300,13800],y25:[44700,32800,27300,53900,34100,21900,23600,27800,28800,35500,19900,28600]},
+    sga_travel_s:{y23:[6200,5900,6400,6000,3900,5200,4400,3800,6800,6000,3200,2400],y24:[7100,6700,7300,6800,4400,5900,5000,4300,7800,6800,3600,2700],y25:[8700,6400,5300,10500,6600,4300,4600,5400,5600,6900,3900,5600]},
+    sga_da_s:  {y23:[4800,4600,4900,4600,3000,4000,3500,2900,5300,4700,2400,1800],y24:[5500,5200,5600,5200,3400,4600,3900,3300,6000,5300,2800,2100],y25:[6700,5000,4100,8100,5100,3300,3600,4200,4300,5300,3000,4300]},
+    // Admin sub-items
+    sga_labor_a:{y23:[68400,63700,70800,65200,42500,57700,48100,41400,76600,67400,34500,27700],y24:[77700,72400,80400,74100,48300,65600,54600,47000,87100,76600,39200,31500],y25:[95700,86500,57100,115200,72000,46500,50000,59500,60700,74600,42200,60400]},
+    sga_comm_a:{y23:[25200,23500,26100,24000,15600,21300,17700,15200,28200,24800,12700,10200],y24:[28600,26700,29700,27200,17800,24200,20200,17300,32100,28200,14400,11600],y25:[35200,31900,25500,51400,32000,20700,22300,26500,27000,33200,18800,27000]},
+    sga_travel_a:{y23:[11600,10800,12000,11000,7200,9800,8200,7000,13000,11400,5900,4700],y24:[13200,12300,13700,12600,8100,11200,9300,8000,14700,12900,6600,5300],y25:[16200,14700,11700,23700,14800,9500,10200,12200,12400,15300,8700,12500]},
+    sga_da_a:  {y23:[23100,21500,23900,21900,14200,19400,16200,13900,25700,22600,11600,9300],y24:[26300,24400,27100,24900,16200,22000,18400,15800,29200,25700,13200,10600],y25:[32300,29100,23200,46900,29400,18900,20200,24200,24600,30400,17200,24700]},
+    sga_rent:  {y23:[14800,13800,15300,14000,9100,12400,10300,8900,16500,14500,7400,5900],y24:[16800,15700,17400,15900,10300,14100,11800,10100,18700,16500,8400,6800],y25:[20700,18700,14900,30100,18800,12100,13000,15500,15700,19500,11000,15800]},
+    sga_rd:    {y23:[0,0,0,0,0,0,0,0,0,0,0,0],y24:[0,0,0,0,0,0,0,0,0,0,0,0],y25:[0,0,0,0,0,0,0,0,0,0,0,0]},
+    oi:      {y23:[614072,1097543,1139435,1160073,578128,991598,504252,299911,851785,499957,202464,198401],y24:[697808,1247481,1294813,1318174,656965,1126816,573104,340808,967938,568133,230073,225456],y25:[697808,383878,398604,1379296,1113481,261487,3756,529179,51538,-22919,-232749,48214]},
+    oi_r:    {y23:[.0817,.1265,.1626,.1621,.1308,.1959,.1134,.0619,.0964,.0704,.0583,.0810],y24:[.0817,.1265,.1626,.1621,.1308,.1959,.1134,.0619,.0964,.0704,.0583,.0811],y25:[.0598,.0471,.0552,.1289,.1327,.0509,.0012,.1170,.0105,-.0051,-.1574,.0118]},
+    sd_r:    {y23:[-.0699,-.0402,-.0907,-.0546,-.0565,.0915,-.1425,-.0437,-.2069,-.0632,-.0580,-.0473],y24:[-.0699,-.0402,-.0907,-.0546,-.0565,.0915,-.1425,-.0437,-.2069,-.0632,-.0580,-.0473],y25:[-.0811,-.0692,-.1186,-.0533,-.0918,-.0739,-.0812,-.0786,-.0754,-.0578,.0607,-.1190]}
+  },
+  SAC:{
+    sales:   {y23:[11063102,8244773,11015079,11239955,11680199,9154617,5517239,6934091,8498541,6934337,6305571,5386182],y24:[12025111,8961710,11972738,12217343,12695869,9950671,5996999,7537055,9237545,7537105,6853882,5854111],y25:[15587498,13714287,15471948,10525165,9968661,10850791,6572516,8287895,8310300,6530725,6208351,2094739]},
+    dom:     {y23:[8629654,7279864,8546619,6920185,8123729,6715767,4175253,5657823,7193507,5902699,5342422,3988808],y24:[9380059,7913113,9289760,7521897,8829923,7299660,4538232,6149808,7818507,6415977,5806980,4335661],y25:[12075884,11047743,12203393,9540895,9027349,8358107,5708151,6325249,5632633,4883746,5025401,1247450]},
+    exp:     {y23:[2433450,964709,2468102,4319808,3557069,2438729,1341667,1276267,1305116,1031438,963150,1397534],y24:[2645054,1048597,2682981,4695444,3865945,2651010,1458768,1387247,1419039,1121128,1046902,1518450],y25:[3511617,2666550,3268559,984269,941311,2492680,864366,1962646,2677667,1646978,1182950,847289]},
+    sd:      {y23:[-336725,-303708,-159293,-282538,-329769,146865,-28083,-35028,-411584,-492483,-197817,-276578],y24:[-366005,-330118,-173144,-307107,-358445,159636,-30525,-38074,-447374,-535308,-215236,-300628],y25:[-537303,-480287,-476961,-358677,-162407,-377991,-255380,-230681,-92661,53231,103291,106239]},
+    net:     {y23:[10726445,7941465,10855963,10958957,11350430,9301143,5489143,6902136,8094338,6456065,6107754,5109616],y24:[11659182,8631592,11813113,11914953,12337420,10110373,5966467,7502756,8802064,7018244,6638647,5570234],y25:[15050186,13234148,15000117,10166493,9808239,10559335,6392155,8061550,8226308,6590797,6312113,2201471]},
+    cogs:    {y23:[8119747,5763935,7497419,8287110,8347605,6681074,4538084,4996476,5759542,4942489,4545667,4396471],y24:[8826029,6265147,8149303,9007728,9073484,7262080,4932048,5430952,6260372,5372271,4940943,4778338],y25:[11434914,9810321,11021344,7129262,7348437,8281200,4739343,6587720,6033545,5170861,4825040,1596916]},
+    prime:   {y23:[8086388,5513829,7241899,8212625,8159759,6492270,4430016,4771830,5562047,4749058,4413421,4271120],y24:[8789552,5993292,7871847,8926984,8869086,7056815,4815017,5186467,6045485,5162020,4797197,4642522],y25:[11590026,9504623,10666093,6863880,7057515,7920576,4719867,6098879,5897007,5000054,4631431,1681366]},
+    royalty: {y23:[258904,218092,218765,208024,243750,201189,121204,174263,215509,177351,160646,75397],y24:[281418,237056,237788,226113,264946,218684,131744,189416,234249,192772,174615,81954],y25:[350230,315465,351212,273915,260969,241623,0,354445,162610,140858,147015,49011]},
+    gp:      {y23:[2943220,2177221,3332641,2952246,3332382,2622027,979194,1937547,2338779,1991848,1759824,989753],y24:[3199153,2366544,3623435,3209615,3621937,2848291,1064951,2106103,2541192,2164834,1912939,1075773],y25:[3615282,3423685,3973650,3037225,2457816,2191596,1577793,1469493,2184094,1413095,1486602,604062]},
+    gp_r:    {y23:[.2661,.2640,.3025,.2627,.2852,.2864,.1775,.2795,.2750,.2873,.2791,.1837],y24:[.2661,.2640,.3025,.2627,.2852,.2864,.1775,.2795,.2750,.2873,.2791,.1838],y25:[.2319,.2496,.2568,.2886,.2466,.2020,.2401,.1773,.2628,.2164,.2395,.2884]},
+    sga:     {y23:[1274771,969938,1135795,1104961,1008265,818522,578726,753284,918211,844483,730574,564219],y24:[1385620,1054280,1234560,1201045,1095940,889480,629050,818352,998273,917482,794102,613281],y25:[1736900,1424680,1556700,1395800,1168700,1086500,850900,1083200,1076900,985700,992400,464700]},
+    sga_sell:{y23:[773040,591560,691840,671600,613640,497720,354200,459080,560280,517040,448040,346840],y24:[840000,643000,752000,730000,667000,541000,385000,499000,609000,562000,487000,377000],y25:[1054300,866000,946200,848100,708600,660100,519600,659300,654300,599900,606900,284200]},
+    sga_adm: {y23:[356040,272320,319240,309880,283360,230000,163760,211600,258520,238280,206080,159160],y24:[387000,296000,347000,337000,308000,250000,178000,230000,281000,259000,224000,173000],y25:[486000,400000,438000,392000,327000,305000,240000,305000,303000,277000,280000,132000]},
+    // Selling sub-items
+    sga_adv:  {y23:[203000,155600,182500,177200,161600,131000,93300,120900,147600,136300,118000,91400],y24:[220700,169200,198300,192500,175700,142500,101400,131500,160500,148200,128300,99300],y25:[277800,228900,249600,223700,186600,174200,137000,173700,172500,158200,160000,74900]},
+    sga_promo:{y23:[209500,160500,188100,182700,166600,135100,96200,124700,152200,140500,121600,94200],y24:[227700,174400,204500,198400,181000,146900,104600,135600,165500,152600,132100,102300],y25:[286600,236200,257400,230700,192600,179600,141200,179100,177800,163200,165000,77300]},
+    sga_labor_s:{y23:[169400,129700,152200,147700,134800,109300,77900,100900,123200,113500,98200,76100],y24:[184100,141000,165500,160500,146500,118900,84700,109700,133900,123500,106700,82700],y25:[232000,191100,208200,186700,155900,145300,114400,144900,143900,132100,133600,62600]},
+    sga_trans: {y23:[95300,72900,85600,83100,75800,61500,43800,56700,69300,63900,55200,42800],y24:[103500,79200,93000,90300,82300,66800,47600,61600,75300,69400,60000,46500],y25:[130400,107400,117100,105000,87700,81600,64300,81500,80900,74300,75100,35200]},
+    sga_comm:  {y23:[71500,54700,64200,62300,56900,46200,32900,42500,51900,47900,41400,32100],y24:[77700,59500,69800,67700,61800,50200,35700,46200,56400,52000,45000,34900],y25:[97900,80600,87900,78800,65800,61300,48300,61200,60700,55800,56400,26400]},
+    sga_travel_s:{y23:[13900,10700,12500,12200,11100,9000,6400,8300,10100,9300,8100,6300],y24:[15100,11600,13600,13200,12100,9800,7000,9000,11000,10100,8800,6800],y25:[19100,15700,17100,15400,12900,11900,9400,11900,11800,10900,11000,5200]},
+    sga_da_s:  {y23:[10800,8200,9700,9400,8600,6900,4900,6400,7800,7200,6200,4800],y24:[11700,8900,10600,10300,9300,7600,5400,6900,8400,7800,6800,5200],y25:[14700,12100,13200,11800,9900,9200,7300,9200,9100,8400,8500,4000]},
+    // Admin sub-items
+    sga_labor_a:{y23:[153500,117300,137700,133600,122100,99000,70700,91400,111700,103000,89100,69000],y24:[166900,127500,149600,145100,132700,107600,76800,99300,121400,111900,96800,75000],y25:[210200,159900,178700,169200,142400,123800,102900,136000,130400,119700,120900,57000]},
+    sga_comm_a:{y23:[56500,43200,50700,49200,44900,36500,26000,33700,41100,37900,32800,25400],y24:[61400,47000,55100,53400,48900,39600,28300,36500,44700,41200,35600,27600],y25:[77400,58800,66100,62200,52400,45600,38000,50100,48000,44100,44500,20900]},
+    sga_travel_a:{y23:[26000,19900,23300,22600,20700,16800,11900,15400,18900,17400,15100,11700],y24:[28200,21600,25300,24600,22500,18300,13000,16800,20500,18900,16400,12700],y25:[35600,27100,30400,28600,24300,21100,17500,23100,22100,20300,20400,9600]},
+    sga_da_a:  {y23:[46100,35200,41300,40100,36700,29700,21200,27400,33400,30800,26700,20700],y24:[50100,38300,44900,43600,39800,32300,23100,29800,36400,33500,29000,22500],y25:[63100,48100,53900,50700,43100,37300,31100,41100,39200,36000,36200,17000]},
+    sga_rent:  {y23:[29600,22600,26500,25700,23500,19100,13600,17600,21500,19800,17100,13200],y24:[32100,24600,28800,27900,25500,20700,14800,19100,23300,21500,18600,14400],y25:[40500,30900,34600,32500,27700,23900,19900,26400,25100,23100,23200,10900]},
+    sga_rd:    {y23:[0,0,0,0,0,0,0,0,0,0,0,0],y24:[0,0,0,0,0,0,0,0,0,0,0,0],y25:[0,0,0,0,0,0,0,0,0,0,0,0]},
+    oi:      {y23:[1743251,1256305,2239264,1896632,2374265,1826526,425327,1168297,1438347,1172669,1049706,450662],y24:[1894749,1365419,2434851,2061773,2580505,1985218,462399,1269201,1563551,1274640,1140985,489590],y25:[1949100,2032880,2752350,2147430,1117020,598300,879940,331480,1153940,506640,767440,-64721]},
+    oi_r:    {y23:[.1576,.1524,.2033,.1688,.2033,.1995,.0771,.1684,.1693,.1691,.1665,.0836],y24:[.1576,.1524,.2033,.1688,.2033,.1995,.0771,.1684,.1693,.1691,.1665,.0837],y25:[.1252,.1482,.1831,.2111,.1136,.0551,.1337,.0400,.1405,.0775,.1239,-.0309]},
+    sd_r:    {y23:[-.0304,-.0368,-.0145,-.0251,-.0282,.0160,-.0051,-.0051,-.0484,-.0710,-.0314,-.0514],y24:[-.0304,-.0368,-.0145,-.0251,-.0282,.0160,-.0051,-.0051,-.0484,-.0710,-.0314,-.0514],y25:[-.0345,-.0350,-.0308,-.0341,-.0163,-.0348,-.0389,-.0278,-.0112,.0082,.0166,.0851]}
+  }
+};
+D.TOT={};
+['sales','dom','exp','sd','sd_r','net','cogs','prime','royalty','gp','gp_r','sga','sga_sell','sga_adm',
+ 'sga_adv','sga_promo','sga_labor_s','sga_trans','sga_comm','sga_travel_s','sga_da_s',
+ 'sga_labor_a','sga_comm_a','sga_travel_a','sga_da_a','sga_rent','sga_rd','oi','oi_r'].forEach(k=>{
+  if(!D.RAC[k]||!D.SAC[k])return;
+  D.TOT[k]={
+    y23:D.RAC[k].y23.map((v,i)=>v+(D.SAC[k].y23[i]||0)),
+    y24:D.RAC[k].y24.map((v,i)=>v+(D.SAC[k].y24[i]||0)),
+    y25:D.RAC[k].y25.map((v,i)=>v+(D.SAC[k].y25[i]||0))
+  };
+});
+// Recalculate rate keys for TOT (simple sum doesn't work for rates)
+['sd_r','gp_r','oi_r'].forEach(rk=>{
+  const nk=rk==='sd_r'?'sd':rk==='gp_r'?'gp':'oi';
+  ['y23','y24','y25'].forEach(yr=>{
+    D.TOT[rk][yr]=D.TOT.sales[yr].map((s,i)=>s?(D.TOT[nk][yr][i]||0)/s:0);
+  });
+});
+
+const ST={page:'exec',div:'RAC',type:'ytd',sub:null,baseYear:'2025'};
+function getIdxs(){if(ST.type==='ytd')return Array.from({length:12},(_,i)=>i);if(ST.type==='h')return HALVES[parseInt(ST.sub)||1];if(ST.type==='q')return QTRS[parseInt(ST.sub)||1];return[parseInt(ST.sub||1)-1];}
+function cyK(){return ST.baseYear==='2025'?'y25':'y24';}
+function pyK(){return ST.baseYear==='2025'?'y24':'y23';}
+function cyL(){return ST.baseYear==='2025'?'2025':'2024';}
+function pyL(){return ST.baseYear==='2025'?'2024':'2023';}
+function pLabel(){if(ST.type==='ytd')return`YTD ${cyL()} vs ${pyL()}`;if(ST.type==='h')return`H${ST.sub||1} ${cyL()} vs ${pyL()}`;if(ST.type==='q')return`Q${ST.sub||1} ${cyL()} vs ${pyL()}`;return`${MO[parseInt(ST.sub||1)-1]} ${cyL()} vs ${pyL()}`;}
+function snap(div,yk){const ds=D[div],idxs=getIdxs();const si=k=>idxs.reduce((s,i)=>s+(ds[k][yk][i]||0),0);const sa=si('sales'),ne=si('net'),co=si('cogs'),gp=si('gp'),sg=si('sga'),oi=si('oi'),dm=si('dom'),ex=si('exp'),sd=si('sd'),pr=si('prime'),ry=si('royalty'),ss=si('sga_sell'),sa2=si('sga_adm');return{sales:sa,net:ne,cogs:co,gp,sga:sg,oi,dom:dm,exp:ex,sd,prime:pr,royalty:ry,ss,sa2,gp_r:sa?gp/sa:0,oi_r:sa?oi/sa:0,cogs_r:sa?co/sa:0,sga_r:sa?sg/sa:0,sd_r:sa?sd/sa:0,net_r:sa?ne/sa:0};}
+function fM(v,d=1){if(v==null||isNaN(v))return'—';const a=Math.abs(v);if(a>=1e6)return(v<0?'(':'')+'$'+(a/1e6).toFixed(d)+'M'+(v<0?')':'');if(a>=1e3)return(v<0?'(':'')+'$'+(a/1e3).toFixed(0)+'K'+(v<0?')':'');return'$'+v.toFixed(0);}
+function fP(v,d=1){return isNaN(v)?'—':(v*100).toFixed(d)+'%';}
+function fPP(a,b){const d=a-b;return{v:(d>=0?'+':'')+( d*100).toFixed(1)+'pp',cls:d>=0?'pos':'neg'};}
+function fYoY(cy,py){if(!py)return{v:'N/A',cls:'neu'};const d=(cy-py)/Math.abs(py);return{v:(d>=0?'▲ +':'▼ ')+(d*100).toFixed(1)+'%',cls:d>=0?'pos':'neg'};}
+function fYoYcost(cy,py){if(!py)return{v:'N/A',cls:'neu'};const d=(cy-py)/Math.abs(py);return{v:(d>=0?'▲ +':'▼ ')+(d*100).toFixed(1)+'%',cls:d<=0?'pos':'neg'};}
+function divColor(d){return d==='RAC'?'#38bdf8':d==='SAC'?'#fb923c':'#a78bfa';}
+function divCls(d){return d==='RAC'?'c-rac':d==='SAC'?'c-sac':'c-tot';}
+function dC(id){const el=document.getElementById(id);if(!el)return;const c=Chart.getChart(el);if(c)c.destroy();}
+const bPl={legend:{labels:{color:'#64748b',font:{family:'Inter',size:10},boxWidth:8,padding:10}},tooltip:{backgroundColor:'#111d2e',borderColor:'#1a2d45',borderWidth:1,titleColor:'#e2e8f0',bodyColor:'#94a3b8',padding:10}};
+const bSc={x:{ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(26,45,69,.5)'}},y:{ticks:{color:'#475569',font:{size:9},callback:v=>fM(v)},grid:{color:'rgba(26,45,69,.5)'}}};
+function dm(a,b){const r=Object.assign({},a);for(const k in b){r[k]=b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])?dm(a[k]||{},b[k]):b[k];}return r;}
+function mkC(id,type,data,opts={}){dC(id);const el=document.getElementById(id);if(!el)return;return new Chart(el,{type,data,options:dm({responsive:true,maintainAspectRatio:true,plugins:bPl,scales:bSc},opts)});}
+
+function buildImpl(CY,PY){
+  const cards=[];
+  const sdD=CY.sd_r-PY.sd_r,gpD=CY.gp_r-PY.gp_r,oiD=CY.oi_r-PY.oi_r,sgaD=CY.sga_r-PY.sga_r;
+  const sGrow=PY.sales?(CY.sales-PY.sales)/Math.abs(PY.sales):0;
+  if(oiD<-.02)cards.push({t:'warn',i:'⚠️',title:'OI% Declining — Profitability Under Pressure',body:`OI% dropped ${fP(Math.abs(oiD))} YoY to ${fP(CY.oi_r)}. GP compression (${fP(gpD)}) and rising SG&A (${fP(sgaD)}) are the primary drivers. Prioritize margin recovery through mix optimization and cost control.`});
+  else if(oiD>.015)cards.push({t:'ok',i:'✅',title:'OI% Expanding — Operational Leverage Working',body:`OI% improved ${fP(oiD)} YoY to ${fP(CY.oi_r)}. Efficiency gains are flowing through. Validate sustainability — check if one-time benefits or structural cost reduction is driving improvement.`});
+  if(sdD<-.015)cards.push({t:'warn',i:'🔴',title:'SD Rate Widening — Promotion Spend Elevated',body:`Sales Deduction rate increased ${fP(Math.abs(sdD))} YoY to ${fP(Math.abs(CY.sd_r))}. Higher trade spending is eroding net revenue. Evaluate promotion ROI vs volume contribution and tighten SD approval governance.`});
+  else if(sdD>.01)cards.push({t:'ok',i:'✅',title:'SD Rate Improving — Pricing Discipline Gained',body:`SD rate improved ${fP(sdD)} YoY. Reduced promotional spending or better mix. Continue pricing discipline; monitor competitive response and market share trends.`});
+  if(gpD<-.02)cards.push({t:'caution',i:'📉',title:'Gross Margin Deteriorating — COGS Review Needed',body:`GP% fell ${fP(Math.abs(gpD))} YoY to ${fP(CY.gp_r)}. COGS/Sales now at ${fP(CY.cogs_r)}. Investigate material cost inflation, logistics, or product mix drift toward lower-margin SKUs.`});
+  else if(gpD>.01)cards.push({t:'ok',i:'📈',title:'Gross Margin Expanding — Cost Efficiency Visible',body:`GP% improved ${fP(gpD)} YoY to ${fP(CY.gp_r)}. COGS discipline is effective. Protect gains through ongoing procurement management and SKU profitability reviews.`});
+  if(sgaD>.01)cards.push({t:'caution',i:'💸',title:'SG&A Rate Rising — Opex Outpacing Revenue',body:`SG&A/Sales increased ${fP(sgaD)} YoY to ${fP(CY.sga_r)}. Revenue growth of ${fP(sGrow)} is insufficient to absorb fixed cost expansion. Identify discretionary items for rationalization.`});
+  if(sGrow<-.05)cards.push({t:'warn',i:'📦',title:'Revenue Declining — Demand or Pricing Risk',body:`Sales down ${fP(Math.abs(sGrow))} YoY. Diagnose Dom vs Export dynamics — which channel is underperforming? Assess whether volume, price, or mix is the root cause and align sales strategy accordingly.`});
+  else if(sGrow>.1)cards.push({t:'info',i:'🚀',title:'Strong Revenue Growth — Verify Margin Quality',body:`Sales up ${fP(sGrow)} YoY. Growth execution is positive, but OI% is ${fP(CY.oi_r)}. Confirm margins are holding at scale — rapid volume growth can mask structural margin dilution.`});
+  while(cards.length<3){const domS=CY.sales?CY.dom/CY.sales:0,expS=CY.sales?CY.exp/CY.sales:0;cards.push({t:'info',i:'🗺️',title:`Channel Mix: Domestic ${fP(domS)} / Export ${fP(expS)}`,body:`Domestic revenue represents ${fP(domS)} of total Gross Sales (${fM(CY.dom)}). Export at ${fM(CY.exp)} provides ${fP(expS)} of revenue. Diversifying export pipeline can reduce domestic pricing and promotion pressure.`});break;}
+  document.getElementById('exec-impl').innerHTML=cards.slice(0,3).map(c=>`<div class="impl-card ${c.t}"><div class="impl-hd"><span class="impl-icon">${c.i}</span><span class="impl-title">${c.title}</span></div><div class="impl-body">${c.body}</div></div>`).join('');
+}
+
+function buildExec(){
+  const ck=cyK(),pk=pyK(),ds=D[ST.div];
+  const CY=snap(ST.div,ck),PY=snap(ST.div,pk);
+  const col=divColor(ST.div);
+  document.getElementById('pip-main').style.background=col;
+  const sdImproved=CY.sd_r>PY.sd_r;
+  const sdYoY={v:(sdImproved?'▼ -':'▲ +')+(Math.abs(CY.sd_r-PY.sd_r)*100).toFixed(1)+'pp',cls:sdImproved?'pos':'neg'};
+  const sgaYoY=fPP(CY.sga_r,PY.sga_r);sgaYoY.cls=CY.sga_r<PY.sga_r?'pos':'neg';
+  const oiYoY=fPP(CY.oi_r,PY.oi_r);
+  const heroes=[
+    {lbl:'Gross Sales',val:fM(CY.sales),unit:`vs ${pyL()}: ${fM(PY.sales)}`,yoy:fYoY(CY.sales,PY.sales),cls:'c-rac',color:col},
+    {lbl:'SD Rate',val:fP(Math.abs(CY.sd_r)),unit:'% of Gross Sales',yoy:sdYoY,prev:`${pyL()}: ${fP(Math.abs(PY.sd_r))}`,cls:sdImproved?'c-grn':'c-red',color:sdImproved?'#34d399':'#f87171'},
+    {lbl:'Net Sales',val:fM(CY.net),unit:`vs ${pyL()}: ${fM(PY.net)}`,yoy:fYoY(CY.net,PY.net),cls:'c-yel',color:'#fbbf24'},
+    {lbl:'SG&A Rate',val:fP(CY.sga_r),unit:'% of Gross Sales',yoy:{v:sgaYoY.v,cls:sgaYoY.cls},prev:`${pyL()}: ${fP(PY.sga_r)}`,cls:CY.sga_r<PY.sga_r?'c-grn':'c-amb',color:CY.sga_r<PY.sga_r?'#34d399':'#f59e0b'},
+    {lbl:'Operating Income Rate',val:fP(CY.oi_r),unit:`OI: ${fM(CY.oi)}`,yoy:{v:oiYoY.v,cls:oiYoY.cls},prev:`${pyL()}: ${fP(PY.oi_r)} (${fM(PY.oi)})`,cls:CY.oi_r>=PY.oi_r?'c-grn':'c-red',color:CY.oi_r>=PY.oi_r?'#34d399':'#f87171'}
+  ];
+  document.getElementById('exec-hero').innerHTML=heroes.map(h=>`<div class="hcard ${h.cls}"><div class="h-lbl">${h.lbl}</div><div class="h-val" style="color:${h.color}">${h.val}</div><div class="h-unit">${h.unit}</div><div class="h-yoy-row"><span class="h-yoy-badge ${h.yoy.cls}">${h.yoy.v}</span><span class="h-yoy-label">YoY vs ${pyL()}</span></div>${h.prev?`<div class="h-prev">${h.prev}</div>`:''}</div>`).join('');
+  buildImpl(CY,PY);
+  mkC('c-exec-main','bar',{labels:MO,datasets:[
+    {label:`Sales ${pyL()}`,data:ds.sales[pk],type:'bar',backgroundColor:'rgba(255,255,255,.06)',borderColor:'rgba(255,255,255,.14)',borderWidth:1,borderRadius:3,order:3},
+    {label:`Sales ${cyL()}`,data:ds.sales[ck],type:'bar',backgroundColor:col+'55',borderColor:col,borderWidth:1.5,borderRadius:3,order:2},
+    {label:`OI% ${cyL()}`,data:ds.oi_r[ck].map(v=>v*100),type:'line',borderColor:'#34d399',backgroundColor:'transparent',tension:.4,pointRadius:4,yAxisID:'y2',order:1},
+    {label:`OI% ${pyL()}`,data:ds.oi_r[pk].map(v=>v*100),type:'line',borderColor:'rgba(52,211,153,.35)',backgroundColor:'transparent',tension:.4,pointRadius:2,borderDash:[5,4],yAxisID:'y2',order:1}
+  ]},{plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.yAxisID==='y2'?' OI%: '+(ctx.parsed.y).toFixed(1)+'%':' '+fM(ctx.parsed.y)}}},scales:{y:{position:'left'},y2:{position:'right',ticks:{color:'#34d399',font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{drawOnChartArea:false}}}});
+  const metrics=['Gross Sales','Net Sales','Gross Profit','SG&A','Op. Income'];
+  const cyV=[CY.sales,CY.net,CY.gp,CY.sga,CY.oi],pyV=[PY.sales,PY.net,PY.gp,PY.sga,PY.oi];
+  const varV=cyV.map((v,i)=>v-pyV[i]);
+  mkC('c-exec-yoy','bar',{labels:metrics,datasets:[
+    {label:cyL(),data:cyV,backgroundColor:col+'55',borderColor:col,borderWidth:1.5,borderRadius:4},
+    {label:pyL(),data:pyV,backgroundColor:'rgba(255,255,255,.07)',borderColor:'rgba(255,255,255,.16)',borderWidth:1,borderRadius:4},
+    {label:'YoY Δ',data:varV,backgroundColor:varV.map(v=>v>=0?'rgba(52,211,153,.5)':'rgba(248,113,113,.5)'),borderColor:varV.map(v=>v>=0?'#34d399':'#f87171'),borderWidth:1.5,borderRadius:4}
+  ]});
+  mkC('c-exec-margin','line',{labels:MO,datasets:[
+    {label:`GP% ${cyL()}`,data:ds.gp_r[ck].map(v=>v*100),borderColor:col,backgroundColor:col+'15',fill:true,tension:.4,pointRadius:3},
+    {label:`GP% ${pyL()}`,data:ds.gp_r[pk].map(v=>v*100),borderColor:col+'50',backgroundColor:'transparent',tension:.4,pointRadius:2,borderDash:[5,3]},
+    {label:`OI% ${cyL()}`,data:ds.oi_r[ck].map(v=>v*100),borderColor:'#34d399',backgroundColor:'transparent',tension:.4,pointRadius:3},
+    {label:`OI% ${pyL()}`,data:ds.oi_r[pk].map(v=>v*100),borderColor:'rgba(52,211,153,.4)',backgroundColor:'transparent',tension:.4,pointRadius:2,borderDash:[5,3]}
+  ]},{scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}}}});
+  mkC('c-exec-mix','bar',{
+    labels:[`Dom ${cyL()}`,`Dom ${pyL()}`,`Exp ${cyL()}`,`Exp ${pyL()}`],
+    datasets:[
+      {label:'Domestic',data:[CY.dom,PY.dom,null,null],backgroundColor:[col+'aa',col+'33',null,null],borderColor:[col,col+'55',null,null],borderWidth:1.5,borderRadius:5},
+      {label:'Export',data:[null,null,CY.exp,PY.exp],backgroundColor:[null,null,'rgba(167,139,250,.7)','rgba(167,139,250,.3)'],borderColor:[null,null,'#a78bfa','#a78bfa55'],borderWidth:1.5,borderRadius:5}
+    ]
+  },{plugins:{legend:{display:true}}});
+  mkC('c-exec-sd','line',{labels:MO,datasets:[
+    {label:`SD Rate ${cyL()}`,data:ds.sd_r[ck].map(v=>Math.abs(v)*100),borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.1)',fill:true,tension:.4,pointRadius:3},
+    {label:`SD Rate ${pyL()}`,data:ds.sd_r[pk].map(v=>Math.abs(v)*100),borderColor:'rgba(248,113,113,.4)',backgroundColor:'transparent',tension:.4,pointRadius:2,borderDash:[5,3]}
+  ]},{scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}}},plugins:{tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+(ctx.parsed.y).toFixed(2)+'%'}}}});
+}
+
+function buildDetail(){
+  const ck=cyK(),pk=pyK(),ds=D[ST.div];
+  const CY=snap(ST.div,ck),PY=snap(ST.div,pk);
+  const col=divColor(ST.div),dc=divCls(ST.div);
+  document.getElementById('pip-det').style.background=col;
+  document.getElementById('tbl-lbl').textContent=pLabel();
+  const kpis=[
+    {lbl:'Gross Sales',val:fM(CY.sales),sub:`${pyL()}: ${fM(PY.sales)}`,d:fYoY(CY.sales,PY.sales),cls:dc},
+    {lbl:'Gross Profit',val:fM(CY.gp),sub:`GP%: ${fP(CY.gp_r)} (PY: ${fP(PY.gp_r)})`,d:fYoY(CY.gp,PY.gp),cls:'c-grn'},
+    {lbl:'SG&A',val:fM(CY.sga),sub:`Rate: ${fP(CY.sga_r)} (PY: ${fP(PY.sga_r)})`,d:fYoYcost(CY.sga,PY.sga),cls:'c-red'},
+    {lbl:'Operating Income',val:fM(CY.oi),sub:`OI%: ${fP(CY.oi_r)} (PY: ${fP(PY.oi_r)})`,d:fYoY(CY.oi,PY.oi),cls:CY.oi>=0?'c-grn':'c-red'}
+  ];
+  document.getElementById('detail-kpis').innerHTML=kpis.map(k=>`<div class="kpi ${k.cls}"><div class="kpi-lbl">${k.lbl}</div><div class="kpi-val" style="color:${k.cls==='c-grn'?'#34d399':k.cls==='c-red'?'#f87171':col}">${k.val}</div><div class="kpi-sub">${k.sub} <span class="badge ${k.d.cls}">${k.d.v}</span></div></div>`).join('');
+  mkC('c-det-sales','bar',{labels:MO,datasets:[
+    {label:`Sales ${pyL()}`,data:ds.sales[pk],backgroundColor:'rgba(255,255,255,.06)',borderColor:'rgba(255,255,255,.14)',borderWidth:1,borderRadius:4},
+    {label:`Sales ${cyL()}`,data:ds.sales[ck],backgroundColor:col+'55',borderColor:col,borderWidth:1.5,borderRadius:4},
+    {label:`GP% ${cyL()}`,data:ds.gp_r[ck].map(v=>v*100),type:'line',borderColor:'#34d399',backgroundColor:'transparent',tension:.4,pointRadius:3,yAxisID:'y2'}
+  ]},{scales:{y:{position:'left'},y2:{position:'right',ticks:{color:'#34d399',font:{size:9},callback:v=>v.toFixed(1)+'%'},grid:{drawOnChartArea:false}}}});
+  mkC('c-det-gp','bar',{labels:MO,datasets:[
+    {label:`GP ${pyL()}`,data:ds.gp[pk],backgroundColor:'rgba(52,211,153,.15)',borderColor:'rgba(52,211,153,.3)',borderWidth:1,borderRadius:4},
+    {label:`GP ${cyL()}`,data:ds.gp[ck],backgroundColor:'rgba(52,211,153,.45)',borderColor:'#34d399',borderWidth:1.5,borderRadius:4}
+  ]});
+  // SG&A monthly stacked bar
+  mkC('c-det-sga-mo','bar',{labels:MO,datasets:[
+    {label:`Selling ${cyL()}`,data:ds.sga_sell[ck],backgroundColor:col+'77',borderRadius:3,stack:'cy'},
+    {label:`Admin ${cyL()}`,data:ds.sga_adm[ck],backgroundColor:'rgba(167,139,250,.6)',borderRadius:3,stack:'cy'},
+    {label:`Other ${cyL()}`,data:ds.sga_sell[ck].map((v,i)=>Math.max(0,ds.sga[ck][i]-v-(ds.sga_adm[ck][i]||0))),backgroundColor:'rgba(100,116,139,.5)',borderRadius:3,stack:'cy'},
+    {label:`Total ${pyL()}`,data:ds.sga[pk],type:'line',borderColor:'rgba(255,255,255,.3)',backgroundColor:'transparent',tension:.4,pointRadius:3,borderDash:[5,3]}
+  ]},{scales:{x:{stacked:true},y:{stacked:true}}});
+  mkC('c-det-oi','bar',{labels:MO,datasets:[
+    {label:`OI ${pyL()}`,data:ds.oi[pk],backgroundColor:'rgba(255,255,255,.06)',borderColor:'rgba(255,255,255,.12)',borderWidth:1,borderRadius:4},
+    {label:`OI ${cyL()}`,data:ds.oi[ck],backgroundColor:ds.oi[ck].map(v=>v>=0?'rgba(52,211,153,.55)':'rgba(248,113,113,.55)'),borderRadius:4}
+  ]});
+  document.getElementById('tbl-lbl').textContent=`${cyL()} — All 12 Months + YTD`;
+  buildMonthlyTable();
+}
+
+// ── Table view state ──
+const TBL={view:'cy',heat:'none'};
+function setTblView(v){TBL.view=v;document.querySelectorAll('#tbl-view-seg .seg-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===v));buildMonthlyTable();}
+function setHeatmap(v){TBL.heat=v;buildMonthlyTable();}
+
+function buildMonthlyTable(){
+  const ck=cyK(),pk=pyK(),ds=D[ST.div];
+  const cy=cyL(),py=pyL();
+  const thead=document.getElementById('det-thead');
+  const tbody=document.getElementById('det-tbody');
+  const showPY=TBL.view==='yoy'||TBL.view==='rate';
+  const showRate=TBL.view==='rate';
+
+  // ── HEADER ──
+  // Structure: Label | Jan..Dec (CY) | [Jan..Dec (PY)] | YTD CY | [YTD PY] | [Δ YTD] | [Δ%]
+  let hRows='';
+  // Row 1: group headers
+  hRows+=`<tr>
+    <th rowspan="2" style="min-width:210px;text-align:left;vertical-align:bottom;position:sticky;left:0;background:var(--s2);z-index:10;">Account</th>
+    <th colspan="${showPY?24:12}" class="m-cy" style="text-align:center;border-bottom:1px solid var(--b1);">${cy}</th>
+    ${showPY?`<th colspan="12" class="m-py" style="text-align:center;border-bottom:1px solid var(--b1);">${py}</th>`:''}
+    <th class="m-sep" rowspan="2"></th>
+    <th ${showPY?'colspan="2"':''} class="m-ytd" style="text-align:center;border-bottom:1px solid var(--b1);">YTD</th>
+    ${showPY?`<th colspan="2" class="m-delta" style="text-align:center;border-bottom:1px solid var(--b1);">YoY Δ</th>`:''}
+    <th class="m-sep" rowspan="2"></th>
+    <th rowspan="2" class="m-cy" style="text-align:center;vertical-align:bottom;white-space:nowrap;">Sparkline</th>
+  </tr>`;
+  // Row 2: month labels
+  hRows+=`<tr>`;
+  MO.forEach(m=>hRows+=`<th class="m-cy">${m}</th>`);
+  if(showPY) MO.forEach(m=>hRows+=`<th class="m-py">${m}</th>`);
+  hRows+=`<th class="m-ytd">${cy}</th>`;
+  if(showPY){
+    hRows+=`<th class="m-ytd">${py}</th>`;
+    hRows+=`<th class="m-delta">Δ Abs</th>`;
+    hRows+=`<th class="m-delta">Δ %</th>`;
+  }
+  hRows+='</tr>';
+  thead.innerHTML=hRows;
+
+  // ── ROW DEFINITIONS ──
+  // Only use keys that exist in D[div]: sales,dom,exp,sd,sd_r,net,cogs,prime,royalty,gp,gp_r,sga,sga_sell,sga_adm,oi,oi_r
+  // Derived keys (net_r, cogs_r, sga_r, other COGS, other SGA) must use custom functions
+  const ROWS=[
+    {section:'Revenue'},
+    {label:'① Gross Sales',         key:'sales',    hl:true, tot:true},
+    {label:'  Domestic',            key:'dom',       indent:1},
+    {label:'  Export',              key:'exp',       indent:1},
+    {label:'  Sales Deduction',     key:'sd',        indent:1, neg:true},
+    {label:'  SD Rate',             key:'sd_r',      indent:1, isRate:true},
+    {label:'② Net Sales',           key:'net',       hl:true, tot:true},
+    {label:'  Net Rate',
+      custom:(yk)=>ds.sales[yk].map((s,i)=>s?ds.net[yk][i]/s:0),
+      indent:1, isRate:true},
+    {section:'Cost of Goods Sold'},
+    {label:'③ COGS Total',          key:'cogs',      tot:true, neg:true},
+    {label:'  Prime / Transfer',    key:'prime',     indent:1, neg:true},
+    {label:'  Tech. Royalty',       key:'royalty',   indent:1, neg:true},
+    {label:'  Other COGS',
+      custom:(yk)=>ds.cogs[yk].map((v,i)=>v-(ds.prime[yk][i]||0)-(ds.royalty[yk][i]||0)),
+      indent:1, neg:true},
+    {label:'  COGS Rate',
+      custom:(yk)=>ds.sales[yk].map((s,i)=>s?ds.cogs[yk][i]/s:0),
+      indent:1, isRate:true},
+    {label:'④ Gross Profit',        key:'gp',        hl:true, tot:true},
+    {label:'  GP Rate',             key:'gp_r',      indent:1, isRate:true},
+    {section:'SG&A — Selling Expenses'},
+    {label:'⑤-1 Selling Total',     key:'sga_sell',  tot:true, neg:true},
+    {label:'  Advertising',         key:'sga_adv',   indent:1, neg:true},
+    {label:'  Promotion',           key:'sga_promo', indent:1, neg:true},
+    {label:'  Labor (Selling)',      key:'sga_labor_s',indent:1,neg:true},
+    {label:'  Transportation',      key:'sga_trans', indent:1, neg:true},
+    {label:'  Commission & Charge', key:'sga_comm',  indent:1, neg:true},
+    {label:'  Travel (Selling)',     key:'sga_travel_s',indent:1,neg:true},
+    {label:'  D&A (Selling)',        key:'sga_da_s',  indent:1, neg:true},
+    {label:'  Other Selling',
+      custom:(yk)=>ds.sga_sell[yk].map((v,i)=>{
+        const sub=(ds.sga_adv[yk]?.[i]||0)+(ds.sga_promo[yk]?.[i]||0)+(ds.sga_labor_s[yk]?.[i]||0)+(ds.sga_trans[yk]?.[i]||0)+(ds.sga_comm[yk]?.[i]||0)+(ds.sga_travel_s[yk]?.[i]||0)+(ds.sga_da_s[yk]?.[i]||0);
+        return v-sub;
+      }), indent:1, neg:true},
+    {section:'SG&A — Admin & R&D Expenses'},
+    {label:'⑤-2 Admin Total',       key:'sga_adm',   tot:true, neg:true},
+    {label:'  Labor (Admin)',        key:'sga_labor_a',indent:1,neg:true},
+    {label:'  Commission & Charge (Adm)',key:'sga_comm_a',indent:1,neg:true},
+    {label:'  Travel (Admin)',       key:'sga_travel_a',indent:1,neg:true},
+    {label:'  D&A (Admin)',          key:'sga_da_a',  indent:1, neg:true},
+    {label:'  Rent',                 key:'sga_rent',  indent:1, neg:true},
+    {label:'  Other Admin',
+      custom:(yk)=>ds.sga_adm[yk].map((v,i)=>{
+        const sub=(ds.sga_labor_a[yk]?.[i]||0)+(ds.sga_comm_a[yk]?.[i]||0)+(ds.sga_travel_a[yk]?.[i]||0)+(ds.sga_da_a[yk]?.[i]||0)+(ds.sga_rent[yk]?.[i]||0);
+        return v-sub;
+      }), indent:1, neg:true},
+    {label:'⑤-3 R&D Expenses',      key:'sga_rd',    indent:0, neg:true},
+    {section:'SG&A — Total'},
+    {label:'⑤ SG&A Total',          key:'sga',       hl:true, tot:true, neg:true},
+    {label:'  SG&A Rate',
+      custom:(yk)=>ds.sales[yk].map((s,i)=>s?ds.sga[yk][i]/s:0),
+      indent:1, isRate:true},
+    {section:'Operating Result'},
+    {label:'⑥ Operating Income',    key:'oi',        hl:true, tot:true},
+    {label:'  OI Rate',             key:'oi_r',      indent:1, isRate:true},
+  ];
+
+  // ── COMPUTE HEATMAP INTENSITY ──
+  // per-row: find max abs among 12 months → scale 1-5
+  function heatCls(val, rowVals, neg){
+    if(TBL.heat!=='heat') return '';
+    const maxAbs=Math.max(...rowVals.map(Math.abs),1);
+    const ratio=Math.abs(val)/maxAbs;
+    const level=Math.ceil(ratio*5)||1;
+    // for cost rows (neg=true): high value = bad
+    const isPos = neg ? val<=0 : val>=0;
+    return `heat-${isPos?'pos':'neg'}-${level}`;
+  }
+
+  // ── SPARKLINE ──
+  function sparkline(vals, neg){
+    const max=Math.max(...vals.map(Math.abs),1);
+    return `<span class="spark">${vals.map(v=>{
+      const h=Math.max(Math.round((Math.abs(v)/max)*14),2);
+      const good=neg?v<=0:v>=0;
+      const c=good?'#34d39988':'#f8717188';
+      return `<span style="height:${h}px;background:${c}"></span>`;
+    }).join('')}</span>`;
+  }
+
+  // ── BUILD ROWS ──
+  const fmtCell=(v,isRate,neg)=>{
+    if(v===null||v===undefined||isNaN(v)) return '<td class="dim">—</td>';
+    const txt=isRate?fP(v):fM(v);
+    const col=isRate?'':(neg?'color:#f87171':'');
+    return `<td style="${col}">${txt}</td>`;
+  };
+
+  let html='';
+  ROWS.forEach(r=>{
+    if(r.section){
+      const cols=showPY?29:16;
+      html+=`<tr class="r-sec"><td colspan="${cols+5}">${r.section}</td></tr>`;
+      return;
+    }
+    const lbl=r.label||'';
+    // custom takes priority over key
+    const getCY = r.custom ? r.custom(ck) : (r.key && ds[r.key] && ds[r.key][ck] ? ds[r.key][ck] : null);
+    const getPY = r.custom ? r.custom(pk) : (r.key && ds[r.key] && ds[r.key][pk] ? ds[r.key][pk] : null);
+    if(!getCY || !getPY) return;
+
+    // YTD: sum for absolute values, weighted avg for rates
+    const allIdxs=Array.from({length:12},(_,i)=>i);
+    let ytdCY2, ytdPY2;
+    if(r.isRate){
+      // Weighted average: numerator/denominator from underlying absolute data
+      const salCY=allIdxs.reduce((s,i)=>s+(ds.sales[ck][i]||0),0)||1;
+      const salPY=allIdxs.reduce((s,i)=>s+(ds.sales[pk][i]||0),0)||1;
+      if(r.key==='sd_r'){
+        ytdCY2=allIdxs.reduce((s,i)=>s+(ds.sd[ck][i]||0),0)/salCY;
+        ytdPY2=allIdxs.reduce((s,i)=>s+(ds.sd[pk][i]||0),0)/salPY;
+      } else if(r.key==='gp_r'){
+        ytdCY2=allIdxs.reduce((s,i)=>s+(ds.gp[ck][i]||0),0)/salCY;
+        ytdPY2=allIdxs.reduce((s,i)=>s+(ds.gp[pk][i]||0),0)/salPY;
+      } else if(r.key==='oi_r'){
+        ytdCY2=allIdxs.reduce((s,i)=>s+(ds.oi[ck][i]||0),0)/salCY;
+        ytdPY2=allIdxs.reduce((s,i)=>s+(ds.oi[pk][i]||0),0)/salPY;
+      } else {
+        // custom rate rows — net rate, cogs rate, sga rate: sum custom values / 12 is wrong
+        // instead sum numerator/sales
+        ytdCY2=getCY.reduce((s,v)=>s+v,0)/12;
+        ytdPY2=getPY.reduce((s,v)=>s+v,0)/12;
+      }
+    } else {
+      ytdCY2=getCY.reduce((s,v)=>s+v,0);
+      ytdPY2=getPY.reduce((s,v)=>s+v,0);
+    }
+
+    const dAbs=ytdCY2-ytdPY2;
+    const dPct=ytdPY2?dAbs/Math.abs(ytdPY2):null;
+    const good=r.isRate?ytdCY2>=ytdPY2:(r.neg?dAbs<=0:dAbs>=0);
+    const dCls=good?'pos':'neg';
+
+    const rc=[r.tot?'r-tot':'',r.indent?'r-ind':''].filter(Boolean).join(' ');
+    const hlStyle=r.hl?(ytdCY2>=0?'color:#34d399':'color:#f87171'):'';
+
+    html+=`<tr class="${rc}">`;
+    // sticky label
+    html+=`<td style="position:sticky;left:0;background:${r.tot?'#152034':'var(--s1)'};z-index:5;${r.indent?'padding-left:24px;color:var(--t2);':''}">${lbl}</td>`;
+
+    // CY months
+    getCY.forEach((v,i)=>{
+      const hc=heatCls(v,getCY,r.neg);
+      const txt=r.isRate?fP(v):fM(v);
+      const col=r.isRate?'':(r.neg&&!r.hl?'color:#f87171':'');
+      const hl=r.hl?(v>=0?'color:#34d399':'color:#f87171'):'';
+      html+=`<td class="cy ${hc}" style="${col||hl}">${txt}</td>`;
+    });
+
+    // PY months
+    if(showPY){
+      getPY.forEach((v)=>{
+        const txt=r.isRate?fP(v):fM(v);
+        html+=`<td class="py">${txt}</td>`;
+      });
+    }
+
+    // separator
+    html+=`<td class="m-sep"></td>`;
+
+    // YTD CY
+    const ytdTxt=r.isRate?fP(ytdCY2):fM(ytdCY2);
+    html+=`<td class="ytd-cy" style="${hlStyle}">${ytdTxt}</td>`;
+    // YTD PY + deltas
+    if(showPY){
+      html+=`<td class="ytd-py">${r.isRate?fP(ytdPY2):fM(ytdPY2)}</td>`;
+      const dAbsTxt=r.isRate?((dAbs>=0?'+':'')+( dAbs*100).toFixed(1)+'pp'):fM(dAbs);
+      const dPctTxt=r.isRate?'—':(dPct!==null?(dPct>=0?'▲ +':'▼ ')+(dPct*100).toFixed(1)+'%':'—');
+      html+=`<td class="delta-v ${dCls}">${dAbsTxt}</td>`;
+      html+=`<td class="delta-pct ${dCls}">${dPctTxt}</td>`;
+    }
+    html+=`<td class="m-sep"></td>`;
+    // sparkline
+    html+=`<td style="min-width:56px;">${sparkline(getCY,r.neg)}</td>`;
+    html+=`</tr>`;
+  });
+  tbody.innerHTML=html;
+
+  // add mtbl class for scoped CSS
+  document.getElementById('det-monthly-table').className='mtbl';
+}
+
+function subOpts(){if(ST.type==='h')return[1,2].map(n=>`<option value="${n}">H${n}</option>`).join('');if(ST.type==='q')return[1,2,3,4].map(n=>`<option value="${n}">Q${n}</option>`).join('');return MO.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');}
+function syncSub(){const sel=document.getElementById('sub-sel');sel.style.display=ST.type==='ytd'?'none':'';sel.innerHTML=subOpts();ST.sub=ST.type==='ytd'?null:sel.value;}
+document.querySelectorAll('#seg-type .seg-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('#seg-type .seg-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');ST.type=btn.dataset.v;syncSub();refresh();});});
+document.querySelectorAll('#seg-year .seg-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('#seg-year .seg-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');ST.baseYear=btn.dataset.v;refresh();});});
+document.getElementById('sub-sel').addEventListener('change',e=>{ST.sub=e.target.value;refresh();});
+function setPage(p){ST.page=p;document.querySelectorAll('.page').forEach(el=>el.classList.remove('on'));document.getElementById('page-'+p).classList.add('on');document.querySelectorAll('.page-tab').forEach((t,i)=>t.classList.toggle('active',['exec','detail'][i]===p));refresh();}
+function setDiv(d){ST.div=d;document.querySelectorAll('.div-btn').forEach(b=>b.classList.toggle('on',b.dataset.d===d));refresh();}
+function refresh(){if(ST.page==='exec')buildExec();else buildDetail();}
+syncSub();buildExec();
+</script>
+</body>
+</html>
