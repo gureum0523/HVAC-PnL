@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HVAC KPI Dashboard 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #070a10;
+  --bg2:     #0c1018;
+  --panel:   #101520;
+  --panel2:  #161d2a;
+  --border:  #1c2438;
+  --border2: #232f46;
+  --text:    #c8d4f0;
+  --text2:   #7a89b0;
+  --text3:   #3d4d6a;
+  --c1: #00d4b8; /* teal   - AFS      */
+  --c2: #6366f1; /* indigo - B2B Non  */
+  --c3: #3b82f6; /* blue   - B2B Sales*/
+  --c4: #f472b6; /* pink   - B2C      */
+  --amber: #f59e0b;
+  --green: #10b981;
+  --red:   #f43f5e;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --r: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px}
+body{min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* ── Topbar ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px;border-bottom:1px solid var(--border);
+  background:var(--bg2);position:sticky;top:0;z-index:50;
+  gap:12px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:linear-gradient(135deg,#00d4b8,#3b82f6);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:15px;color:#070a10;font-family:var(--mono);
+}
+.brand-name{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.brand-sub{font-size:13px;color:var(--text2);font-family:var(--mono)}
+.top-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge-year{
+  font-family:var(--mono);font-size:13px;color:var(--c1);
+  padding:5px 13px;background:rgba(0,212,184,.08);
+  border:1px solid rgba(0,212,184,.2);border-radius:6px;
+}
+
+/* ── Main layout ── */
+.main{padding:26px 32px;display:flex;flex-direction:column;gap:22px}
+
+/* ── Group legend ── */
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.leg{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;padding:7px 16px;border-radius:99px;border:1px solid var(--border);background:var(--panel);transition:all .15s}
+.leg.active{border-color:transparent;color:#070a10}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.leg[data-g="All"].active{background:linear-gradient(135deg,#00d4b8,#3b82f6)}
+.leg[data-g="AFS"].active{background:var(--c1);color:#070a10}
+.leg[data-g="B2B Non-Sales"].active{background:var(--c2)}
+.leg[data-g="B2B Sales"].active{background:var(--c3)}
+.leg[data-g="B2C"].active{background:var(--c4);color:#070a10}
+
+/* ── Summary cards ── */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:860px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.cards{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:22px 24px;position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.c-teal::after{background:linear-gradient(90deg,var(--c1),var(--c3))}
+.c-indigo::after{background:linear-gradient(90deg,var(--c2),var(--c3))}
+.c-blue::after{background:linear-gradient(90deg,var(--c3),var(--c1))}
+.c-pink::after{background:linear-gradient(90deg,var(--c4),var(--c2))}
+.card-label{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;font-family:var(--mono)}
+.card-val{font-size:34px;font-weight:700;letter-spacing:-1px;line-height:1;font-family:var(--mono)}
+.c-teal .card-val{color:var(--c1)}
+.c-indigo .card-val{color:var(--c2)}
+.c-blue .card-val{color:var(--c3)}
+.c-pink .card-val{color:var(--c4)}
+.card-sub{font-size:13px;color:var(--text2);margin-top:8px}
+
+/* ── Search ── */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:9px 16px;font-size:14px;color:var(--text);font-family:var(--sans);
+  width:260px;outline:none;
+}
+.search::placeholder{color:var(--text3)}
+.search:focus{border-color:var(--c1)}
+.count-info{font-size:13px;color:var(--text2);font-family:var(--mono);margin-left:auto}
+
+/* ── Person grid ── */
+.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+
+/* ── Person card ── */
+.pcard{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+  transition:border-color .18s,transform .18s;cursor:pointer;
+}
+.pcard:hover{border-color:var(--border2);transform:translateY(-2px)}
+.pcard-head{padding:16px 18px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+.av{
+  width:44px;height:44px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:18px;color:#070a10;flex-shrink:0;
+  font-family:var(--mono);
+}
+.av-AFS{background:linear-gradient(135deg,var(--c1),#3b82f6)}
+.av-B2BN{background:linear-gradient(135deg,var(--c2),#8b5cf6)}
+.av-B2BS{background:linear-gradient(135deg,var(--c3),var(--c1))}
+.av-B2C{background:linear-gradient(135deg,var(--c4),var(--c2))}
+.pcard-info{flex:1;min-width:0}
+.pname{font-size:17px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prole{font-size:13px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtag{
+  padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;
+  font-family:var(--mono);letter-spacing:.5px;white-space:nowrap;flex-shrink:0;
+}
+.gtag-AFS{background:rgba(0,212,184,.12);color:var(--c1)}
+.gtag-B2BN{background:rgba(99,102,241,.12);color:var(--c2)}
+.gtag-B2BS{background:rgba(59,130,246,.12);color:var(--c3)}
+.gtag-B2C{background:rgba(244,114,182,.12);color:var(--c4)}
+
+/* KPI rows */
+.kpi-list{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.kpi-row{display:flex;flex-direction:column;gap:5px}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.kpi-label{font-size:13px;color:var(--text2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-weight{font-family:var(--mono);font-size:12px;color:var(--text3);flex-shrink:0}
+.kpi-target{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);flex-shrink:0}
+.kbar-bg{height:4px;background:var(--border2);border-radius:99px;overflow:hidden}
+.kbar-fill{height:100%;border-radius:99px}
+.kbar-AFS{background:linear-gradient(90deg,var(--c1),#3b82f6)}
+.kbar-B2BN{background:linear-gradient(90deg,var(--c2),#8b5cf6)}
+.kbar-B2BS{background:linear-gradient(90deg,var(--c3),var(--c1))}
+.kbar-B2C{background:linear-gradient(90deg,var(--c4),var(--c2))}
+
+/* ── Total achievement bar ── */
+.total-ach{
+  padding:10px 18px 14px;
+  border-top:1px solid var(--border);
+}
+.total-ach-top{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;
+}
+.total-ach-label{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;font-family:var(--mono)}
+.total-ach-pct{font-size:14px;font-weight:700;font-family:var(--mono);color:var(--text)}
+.total-bar-bg{height:7px;background:var(--border2);border-radius:99px;overflow:hidden}
+.total-bar-fill{height:100%;border-radius:99px;transition:width .4s ease}
+
+/* ── Modal ── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.78);z-index:200;
+  align-items:center;justify-content:center;padding:20px;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--panel);border:1px solid var(--border2);
+  border-radius:18px;width:680px;max-width:100%;max-height:90vh;
+  overflow-y:auto;animation:pop .18s ease;
+}
+@keyframes pop{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:none}}
+.modal-head{
+  padding:22px 28px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;position:sticky;top:0;
+  background:var(--panel);z-index:2;
+}
+.modal-av{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:#070a10;font-family:var(--mono)}
+.modal-name{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.modal-role{font-size:14px;color:var(--text2);margin-top:3px}
+.modal-close{margin-left:auto;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--panel2);border:none;color:var(--text2);cursor:pointer;font-size:18px}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:22px 28px}
+.modal-section{margin-bottom:24px}
+.msec-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:14px;font-family:var(--mono)}
+.kpi-table{width:100%;border-collapse:collapse;font-size:14px}
+.kpi-table th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);background:var(--panel2);border-bottom:1px solid var(--border);font-family:var(--mono)}
+.kpi-table td{padding:13px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.kpi-table tr:last-child td{border-bottom:none}
+.kpi-table tr:hover td{background:var(--panel2)}
+.obj-text{color:var(--text);font-weight:600;font-size:14px}
+.measure-text{color:var(--text2);font-size:13px;margin-top:3px}
+.w-chip{display:inline-block;padding:3px 9px;border-radius:4px;font-family:var(--mono);font-size:12px;font-weight:700;background:rgba(255,255,255,.06);color:var(--text2)}
+.score-cell{font-family:var(--mono);font-size:13px;color:var(--text);text-align:right;white-space:nowrap}
+.score-label{font-size:10px;color:var(--text3);margin-bottom:2px}
+.scores-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.score-box{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:10px 8px;text-align:center}
+.score-box .sl{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px}
+.score-box .sv{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)}
+.score-box.s5 .sv{color:var(--green)}
+.score-box.s2 .sv{color:var(--text2)}
+.unit-tag{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+
+/* ── Actual input section ── */
+.actual-section{
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:10px;padding:16px 18px;
+}
+.actual-section .msec-title{margin-bottom:10px}
+.actual-hint{font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5}
+.actual-grid{display:flex;flex-direction:column;gap:10px}
+.actual-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px}
+.actual-label{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actual-input{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;font-size:13px;color:var(--text);font-family:var(--mono);
+  width:110px;outline:none;text-align:right;
+}
+.actual-input:focus{border-color:var(--c1)}
+.actual-input::placeholder{color:var(--text3)}
+.actual-score-badge{
+  font-size:11px;font-weight:700;font-family:var(--mono);
+  padding:3px 8px;border-radius:4px;white-space:nowrap;min-width:52px;text-align:center;
+}
+.badge-none{background:rgba(255,255,255,.05);color:var(--text3)}
+.badge-s2{background:rgba(122,137,176,.15);color:var(--text2)}
+.badge-s3{background:rgba(59,130,246,.15);color:var(--c3)}
+.badge-s4{background:rgba(99,102,241,.15);color:var(--c2)}
+.badge-s5{background:rgba(16,185,129,.15);color:var(--green)}
+.btn-save-actual{
+  display:flex;align-items:center;gap:6px;
+  margin-top:14px;padding:9px 18px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--c1),var(--c3));
+  color:#070a10;font-size:13px;font-weight:700;cursor:pointer;
+  font-family:var(--sans);transition:opacity .2s;
+}
+.btn-save-actual:hover{opacity:.85}
+.save-ok{font-size:12px;color:var(--green);margin-top:8px;display:none}
+
+.empty{text-align:center;padding:60px;color:var(--text3);font-size:15px;grid-column:1/-1}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">HV</div>
+    <div>
+      <div class="brand-name">HVAC KPI Dashboard</div>
+      <div class="brand-sub">Performance Plan 2026</div>
+    </div>
+  </div>
+  <div class="top-right">
+    <span class="badge-year">FY 2026</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- Group filter -->
+  <div class="legend" id="legendEl"></div>
+
+  <!-- Summary cards -->
+  <div class="cards" id="cardsEl"></div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input class="search" type="text" id="searchEl" placeholder="Search by name or role…" oninput="render()">
+    <span class="count-info" id="countInfo"></span>
+  </div>
+
+  <!-- Person grid -->
+  <div class="person-grid" id="gridEl"></div>
+
+</main>
+
+<!-- Modal -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalEl"></div>
+</div>
+
+<script>
+// ── DATA (extracted from Excel files) ────────────────────────────
+const PEOPLE = [
+  {id:"2132",name:"Besher",group:"AFS",role:"AFS - Service Operations Director",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV(M SAR)",weight:0.35,score2:56000000,score3:64000000,score4:72000000,score5:80000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP",weight:0.35,score2:23699757,score3:27085436,score4:30471116,score5:33856796,unit:"M SAR"},{no:3,objective:"Enhance Pipeline",measure:"Award value",weight:0.2,score2:66780000,score3:76320000,score4:85860000,score5:95400000,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:645780,score3:738034,score4:830288,score5:922543,unit:"K SAR"}]},
+  {id:"1316",name:"Bassam",group:"AFS",role:"AFS - SEC - KEY Account Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV(M SAR)",weight:0.35,score2:41834254,score3:47810576,score4:53786898,score5:59763220,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP",weight:0.35,score2:18741746,score3:21419138,score4:24096530,score5:26773923,unit:"M SAR"},{no:3,objective:"Enhance Pipeline",measure:"Award value",weight:0.2,score2:48300000,score3:55200000,score4:62100000,score5:69000000,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:938428,score3:1072489,score4:1206550,score5:1340611,unit:"K SAR"}]},
+  {id:"2313",name:"Mustafa",group:"AFS",role:"AFS - AMC - Service Sales Leader",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV(M SAR)",weight:0.35,score2:14165746,score3:16189424,score4:18213102,score5:20236780,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP",weight:0.35,score2:4958011,score3:5666298,score4:6374586,score5:7082873,unit:"M SAR"},{no:3,objective:"Enhance Pipeline",measure:"Award value",weight:0.2,score2:18480000,score3:21120000,score4:23760000,score5:26400000,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:227809,score3:260353,score4:292897,score5:325442,unit:"K SAR"}]},
+  {id:"1261",name:"Latif",group:"B2B Non-Sales",role:"HVAC Sr. Operation Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for B2B",weight:0.35,score2:614880000,score3:702720000,score4:790560000,score5:878400000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for B2B",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for L/G/MG",weight:0.2,score2:100156297,score3:114464339,score4:128772381,score5:143080424,unit:"M SAR"},{no:4,objective:"New Business",measure:"Award Value (Acc., HA B2B, Heating & Ventil.)",weight:0.1,score2:35000000,score3:40000000,score4:45000000,score5:50000000,unit:"M SAR"}]},
+  {id:"160",name:"Asher",group:"B2B Non-Sales",role:"B2B - Operation Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for B2B",weight:0.35,score2:614880000,score3:702720000,score4:790560000,score5:878400000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for B2B",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for B2B (excl. ESCO)",weight:0.2,score2:591387054,score3:675870919,score4:760354784,score5:844838649,unit:"M SAR"},{no:4,objective:"Enhance Inventory level",measure:"MOS for CCD, CST, PKG (Inv. value, M-12)",weight:0.1,score2:3.25,score3:3.0,score4:2.75,score5:2.5,unit:"Months"}]},
+  {id:"2206",name:"Saad",group:"B2B Non-Sales",role:"B2B - Applied Sales Operations Admin",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Applied",weight:0.35,score2:232613527,score3:265844031,score4:299074535,score5:332305038,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Applied",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Applied",weight:0.2,score2:273851102,score3:312972688,score4:352094274,score5:391215860,unit:"M SAR"},{no:4,objective:"Enhance Inventory level",measure:"MOS for Applied (Inv. Value, M-12)",weight:0.1,score2:3.25,score3:3.0,score4:2.75,score5:2.5,unit:"Months"}]},
+  {id:"900",name:"Azeem",group:"B2B Non-Sales",role:"B2B - Application Team Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Applied",weight:0.35,score2:232613527,score3:265844031,score4:299074535,score5:332305038,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Applied",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Applied",weight:0.2,score2:273851102,score3:312972688,score4:352094274,score5:391215860,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"MV design counts per head",weight:0.1,score2:138,score3:158,score4:178,score5:197,unit:"Counts"}]},
+  {id:"251",name:"Sami",group:"B2B Non-Sales",role:"B2B - T&F Support Sr. Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Applied",weight:0.35,score2:232613527,score3:265844031,score4:299074535,score5:332305038,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Applied",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"FE Engagement + Quality",measure:"FE Engagement + Quality",weight:0.15,score2:5,score3:10,score4:15,score5:20,unit:""},{no:4,objective:"Training + SWOT",measure:"Training + SWOT",weight:0.15,score2:105,score3:120,score4:142,score5:174,unit:""}]},
+  {id:"2297",name:"Nour",group:"B2B Non-Sales",role:"B2B - Consultant Team Leader",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Applied+DX",weight:0.35,score2:515237618,score3:588842992,score4:662448366,score5:736053740,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Applied",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Applied+DX+Chiller",weight:0.2,score2:591387054,score3:675870919,score4:760354784,score5:844838649,unit:"M SAR"},{no:4,objective:"Enhance Pipeline",measure:"Spec'in proposal value",weight:0.1,score2:570792381,score3:652334150,score4:733875918,score5:815417687,unit:"M SAR"}]},
+  {id:"2194",name:"Ali",group:"B2B Non-Sales",role:"B2B - Installation Sales Planning",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Installation",weight:0.35,score2:48542382,score3:55477008,score4:62411634,score5:69346260,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Installation",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Installation",weight:0.2,score2:58250858,score3:66572409,score4:74893960,score5:83215512,unit:"M SAR"},{no:4,objective:"Increase revenue(Sell-Thru)",measure:"Accessory GSV",weight:0.1,score2:15000000,score3:20000000,score4:25000000,score5:30000000,unit:"M SAR"}]},
+  {id:"1713",name:"Ziad",group:"B2B Sales",role:"B2B - Project (West)",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for West PJT",weight:0.35,score2:94080000,score3:107520000,score4:120960000,score5:134400000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for West PJT",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for West PJT",weight:0.2,score2:99664063,score3:113901786,score4:128139510,score5:142377233,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:13440000,score3:15360000,score4:17280000,score5:19200000,unit:"M SAR"}]},
+  {id:"2479",name:"Iyad",group:"B2B Sales",role:"B2B - Project (Central)",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Central PJT",weight:0.35,score2:189000000,score3:216000000,score4:243000000,score5:270000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Central PJT",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Central PJT",weight:0.2,score2:184197682,score3:210511637,score4:236825592,score5:263139546,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:24923077,score3:28483516,score4:32043956,score5:35604396,unit:"M SAR"}]},
+  {id:"2634",name:"Osama",group:"B2B Sales",role:"B2B - Project (East)",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for East PJT + ACS",weight:0.35,score2:79800000,score3:91200000,score4:102600000,score5:114000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for East PJT + East ACS",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for East PJT + ACS",weight:0.2,score2:90363808,score3:103272923,score4:116182038,score5:129091154,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:10881818,score3:12436364,score4:13990909,score5:15545455,unit:"M SAR"}]},
+  {id:"2638",name:"Ibrahim",group:"B2B Sales",role:"B2B - ACS (Central)",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Central ACS",weight:0.35,score2:100100000,score3:114400000,score4:128700000,score5:143000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Central ACS",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Central ACS",weight:0.2,score2:116475150,score3:133114458,score4:149753765,score5:166393072,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:16683333,score3:19066667,score4:21450000,score5:23833333,unit:"M SAR"}]},
+  {id:"1906",name:"Samir",group:"B2B Sales",role:"B2B - ACS (West)",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for West ACS",weight:0.35,score2:37800000,score3:43200000,score4:48600000,score5:54000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for West ACS",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for West ACS",weight:0.2,score2:42196004,score3:48224004,score4:54252005,score5:60280005,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:14175000,score3:16200000,score4:18225000,score5:20250000,unit:"M SAR"}]},
+  {id:"1401",name:"Katta",group:"B2B Sales",role:"B2B - Direct",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Direct Channel",weight:0.35,score2:63000000,score3:72000000,score4:81000000,score5:90000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Direct Channel",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Direct Channel",weight:0.2,score2:58490347,score3:66846111,score4:75201875,score5:83557639,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:21000000,score3:24000000,score4:27000000,score5:30000000,unit:"M SAR"}]},
+  {id:"1945",name:"Hazem",group:"B2B Sales",role:"B2B - Energy Service Sr. Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for ESCO",weight:0.35,score2:50400000,score3:57600000,score4:64800000,score5:72000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for ESCO",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for ESCO",weight:0.2,score2:61271000,score3:70024000,score4:78777000,score5:87530000,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:2652632,score3:3031579,score4:3410526,score5:3789474,unit:"M SAR"}]},
+  {id:"2019",name:"Anwer",group:"B2B Sales",role:"B2B - Installation Team Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for Installation",weight:0.35,score2:48542382,score3:55477008,score4:62411634,score5:69346260,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for Installation",weight:0.35,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Pipeline",measure:"Award value for Installation",weight:0.2,score2:58250858,score3:66572409,score4:74893960,score5:83215512,unit:"M SAR"},{no:4,objective:"Enhance cost efficiency",measure:"Sales per head",weight:0.1,score2:2206472,score3:2521682,score4:2836892,score5:3152103,unit:"M SAR"}]},
+  {id:"1679",name:"Hashad",group:"B2C",role:"B2C - OR Channel Sales Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for OR channel",weight:0.4,score2:176160953,score3:201326803,score4:226492654,score5:251658504,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for OR channel",weight:0.4,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Cash Flow",measure:"DSO for OR channel",weight:0.1,score2:0.2,score3:0,score4:-0.2,score5:-0.3,unit:"Days vs LY"},{no:4,objective:"Enhance Inventory Level",measure:"MOS for Split, Window, PAC (Set Qty, M-12)",weight:0.1,score2:3.5,score3:3.0,score4:2.5,score5:2.0,unit:"Months"}]},
+  {id:"2509",name:"Sherif",group:"B2C",role:"B2C - IR Channel Sales Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for IR channel",weight:0.4,score2:208859286,score3:238696327,score4:268533368,score5:298370408,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for IR channel",weight:0.4,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Cash Flow",measure:"DSO for IR channel (Except SME)",weight:0.1,score2:0.2,score3:0,score4:-0.2,score5:-0.3,unit:"Days vs LY"},{no:4,objective:"Enhance Inventory Level",measure:"MOS for Split, Window, PAC (Set Qty, M-12)",weight:0.1,score2:3.5,score3:3.0,score4:2.5,score5:2.0,unit:"Months"}]},
+  {id:"2165",name:"June",group:"B2C",role:"B2C - Operation Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for B2C",weight:0.4,score2:385000000,score3:440000000,score4:495000000,score5:550000000,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for B2C",weight:0.4,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance Cash Flow",measure:"DSO for B2C (Except SME)",weight:0.1,score2:0.2,score3:0,score4:-0.2,score5:-0.3,unit:"Days vs LY"},{no:4,objective:"Enhance Inventory Level",measure:"MOS for Split, Window, PAC (Set Qty, M-12)",weight:0.1,score2:3.5,score3:3.0,score4:2.5,score5:2.0,unit:"Months"}]},
+  {id:"2498",name:"Jongsoo",group:"B2C",role:"B2C - GTM Manager",kpis:[{no:1,objective:"Increase revenue(Sell-Thru)",measure:"Total GSV for B2C",weight:0.3,score2:385020239,score3:440023130,score4:495026021,score5:550028912,unit:"M SAR"},{no:2,objective:"Maximise profitability",measure:"GP for B2C",weight:0.3,score2:0.7,score3:0.8,score4:0.9,score5:1.0,unit:"GP_PCT"},{no:3,objective:"Enhance cost efficiency",measure:"Sell-out Qty per promoter head",weight:0.3,score2:1960,score3:2240,score4:2520,score5:2800,unit:"Qty"},{no:4,objective:"Enhance B2C Sales Channels",measure:"New IR account GSV",weight:0.1,score2:23881628,score3:27293289,score4:30704950,score5:34116611,unit:"M SAR"}]}
+];
+
+const GROUPS = ['All','AFS','B2B Non-Sales','B2B Sales','B2C'];
+const GCLS = {'AFS':'AFS','B2B Non-Sales':'B2BN','B2B Sales':'B2BS','B2C':'B2C'};
+const GCOL = {'AFS':'var(--c1)','B2B Non-Sales':'var(--c2)','B2B Sales':'var(--c3)','B2C':'var(--c4)'};
+
+let activeGroup = 'All';
+
+// ── Actuals storage (persists in memory per session) ──────────────
+// actuals[personId][kpiNo] = raw numeric string entered by user
+const actuals = {};
+
+function getActual(pid, kno){ return (actuals[pid]||{})[kno]||''; }
+function setActual(pid, kno, val){ if(!actuals[pid]) actuals[pid]={}; actuals[pid][kno]=val; }
+
+// Given actual value and KPI, return which score bucket it lands in
+function scoreOf(val, k){
+  const v = parseFloat(val);
+  if(isNaN(v)) return null;
+  const s=[k.score2,k.score3,k.score4,k.score5];
+  // For metrics where lower=better (DSO, MOS), reverse comparison
+  const lowerBetter = k.unit==='Days vs LY'||k.unit==='Months';
+  if(lowerBetter){
+    if(k.score5!==null && v<=k.score5) return 5;
+    if(k.score4!==null && v<=k.score4) return 4;
+    if(k.score3!==null && v<=k.score3) return 3;
+    if(k.score2!==null && v<=k.score2) return 2;
+    return 1;
+  } else {
+    if(k.score5!==null && v>=k.score5) return 5;
+    if(k.score4!==null && v>=k.score4) return 4;
+    if(k.score3!==null && v>=k.score3) return 3;
+    if(k.score2!==null && v>=k.score2) return 2;
+    return 1;
+  }
+}
+
+function scoreBadge(score){
+  if(score===null) return `<span class="actual-score-badge badge-none">—</span>`;
+  if(score>=5) return `<span class="actual-score-badge badge-s5">Score 5</span>`;
+  if(score===4) return `<span class="actual-score-badge badge-s4">Score 4</span>`;
+  if(score===3) return `<span class="actual-score-badge badge-s3">Score 3</span>`;
+  if(score===2) return `<span class="actual-score-badge badge-s2">Score 2</span>`;
+  return `<span class="actual-score-badge badge-none">Score 1</span>`;
+}
+
+// ── Format ───────────────────────────────────────────────────────
+function fmt(v, unit){
+  if(v===null||v===undefined) return '—';
+  if(unit==='Days vs LY') return (v>=0?'+':'')+Math.round(v*100)+'%';
+  if(unit==='Months') return v.toFixed(1)+' mo';
+  if(unit==='Counts') return Math.round(v).toLocaleString();
+  if(unit==='Qty') return Math.round(v).toLocaleString();
+  if(unit==='GP_PCT'||unit==='%'||unit==='') return (v*100).toFixed(0)+'%';
+  // SAR
+  if(Math.abs(v)>=1e9) return (v/1e9).toFixed(2)+'B';
+  if(Math.abs(v)>=1e6) return (v/1e6).toFixed(1)+'M';
+  if(Math.abs(v)>=1e3) return (v/1e3).toFixed(0)+'K';
+  return v.toFixed(0);
+}
+
+// ── Render Legend ─────────────────────────────────────────────────
+function renderLegend(){
+  const el=document.getElementById('legendEl');
+  el.innerHTML=GROUPS.map(g=>`
+    <div class="leg${g===activeGroup?' active':''}" data-g="${g}" onclick="setGroup('${g}')">
+      <div class="leg-dot" style="background:${g==='All'?'var(--c1)':GCOL[g]}"></div>
+      ${g} ${g!=='All'?`(${PEOPLE.filter(p=>p.group===g).length})`:`(${PEOPLE.length})`}
+    </div>
+  `).join('');
+}
+function setGroup(g){activeGroup=g;renderLegend();renderCards();render()}
+
+// ── Render Cards ─────────────────────────────────────────────────
+function renderCards(){
+  const data=activeGroup==='All'?PEOPLE:PEOPLE.filter(p=>p.group===activeGroup);
+  const total=data.length;
+  const groups=[...new Set(data.map(p=>p.group))].length;
+  // Count unique objectives
+  const objs=new Set();data.forEach(p=>p.kpis.forEach(k=>objs.add(k.objective)));
+  // Total KPIs
+  const totalKpis=data.reduce((s,p)=>s+p.kpis.length,0);
+
+  document.getElementById('cardsEl').innerHTML=`
+    <div class="card c-teal">
+      <div class="card-label">Total Managers</div>
+      <div class="card-val">${total}</div>
+      <div class="card-sub">Across ${groups} group${groups!==1?'s':''}</div>
+    </div>
+    <div class="card c-indigo">
+      <div class="card-label">KPI Items</div>
+      <div class="card-val">${totalKpis}</div>
+      <div class="card-sub">${Math.round(totalKpis/total*10)/10} avg per person</div>
+    </div>
+    <div class="card c-blue">
+      <div class="card-label">Unique Objectives</div>
+      <div class="card-val">${objs.size}</div>
+      <div class="card-sub">Strategic KRAs</div>
+    </div>
+    <div class="card c-pink">
+      <div class="card-label">Groups</div>
+      <div class="card-val">${groups}</div>
+      <div class="card-sub">AFS · B2B · B2C</div>
+    </div>
+  `;
+}
+
+// ── Render Grid ───────────────────────────────────────────────────
+function filtered(){
+  const q=(document.getElementById('searchEl').value||'').toLowerCase();
+  return PEOPLE.filter(p=>
+    (activeGroup==='All'||p.group===activeGroup) &&
+    (p.name.toLowerCase().includes(q)||p.role.toLowerCase().includes(q)||p.id.includes(q))
+  );
+}
+
+function render(){
+  const data=filtered();
+  document.getElementById('countInfo').textContent=`${data.length} / ${PEOPLE.length} managers`;
+  const grid=document.getElementById('gridEl');
+  if(!data.length){grid.innerHTML='<div class="empty">No results found.</div>';return;}
+  grid.innerHTML=data.map(p=>{
+    const gcls=GCLS[p.group]||'AFS';
+    const gtag=p.group==='B2B Non-Sales'?'B2B Non-Sales':p.group==='B2B Sales'?'B2B Sales':p.group;
+    const kpiRows=p.kpis.map(k=>{
+      const hasTarget=k.score5!==null;
+      const targetVal=hasTarget?fmt(k.score5,k.unit):'TBD';
+      const w=Math.round(k.weight*100);
+      // Achievement bar: score-based (0% if no actual entered)
+      const savedActual=getActual(p.id,k.no);
+      let achPct=20;
+      if(savedActual!==''&&k.score5!==null){
+        const av=parseFloat(savedActual);
+        if(!isNaN(av)){
+          const score=scoreOf(savedActual,k);
+          const scoreMap={1:20,2:40,3:60,4:80,5:100};
+          achPct=scoreMap[score]??0;
+        }
+      }
+      return `<div class="kpi-row">
+        <div class="kpi-top">
+          <span class="kpi-label" title="${k.measure}">${k.measure}</span>
+          <span class="kpi-weight">${w}%</span>
+          <span class="kpi-target">${targetVal}${k.unit&&k.unit!=='M SAR'&&k.unit!=='%'&&k.unit!==''&&k.unit!=='GP_PCT'?` <span style="font-size:9px;color:var(--text3)">${k.unit}</span>`:''}</span>
+        </div>
+        <div class="kbar-bg"><div class="kbar-fill kbar-${gcls}" style="width:${achPct}%"></div></div>
+      </div>`;
+    }).join('');
+
+    // Weighted total achievement score (max 5.0)
+    const totalScore = p.kpis.reduce((sum, k) => {
+      const saved = getActual(p.id, k.no);
+      let score = 1;
+      if(saved !== '' && k.score5 !== null){
+        const av = parseFloat(saved);
+        if(!isNaN(av)) score = scoreOf(saved, k);
+      }
+      return sum + score * k.weight;
+    }, 0);
+    const totalScoreRounded = Math.round(totalScore * 10) / 10;
+    const barPct = (totalScoreRounded / 5) * 100;
+    const totalBarColor = totalScoreRounded >= 4 ? 'var(--green)' : totalScoreRounded >= 3 ? 'var(--c3)' : totalScoreRounded >= 2 ? 'var(--amber)' : 'var(--red)';
+
+    return `<div class="pcard" onclick="openModal('${p.id}')">
+      <div class="pcard-head">
+        <div class="av av-${gcls}">${p.name[0]}</div>
+        <div class="pcard-info">
+          <div class="pname">${p.name}</div>
+          <div class="prole">${p.role}</div>
+        </div>
+        <span class="gtag gtag-${gcls}">${gtag}</span>
+      </div>
+      <div class="kpi-list">${kpiRows}</div>
+      <div class="total-ach">
+        <div class="total-ach-top">
+          <span class="total-ach-label">Total Score</span>
+          <span class="total-ach-pct" style="color:${totalBarColor}">${totalScoreRounded.toFixed(1)} <span style="font-size:11px;color:var(--text3)">/ 5.0</span></span>
+        </div>
+        <div class="total-bar-bg">
+          <div class="total-bar-fill" style="width:${barPct}%;background:${totalBarColor}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Modal ─────────────────────────────────────────────────────────
+function openModal(id){
+  const p=PEOPLE.find(x=>x.id===id);if(!p) return;
+  const gcls=GCLS[p.group]||'AFS';
+  const kpiRows=p.kpis.map(k=>{
+    const w=Math.round(k.weight*100);
+    const scores=[
+      {label:'Score 2',val:k.score2,cls:'s2'},
+      {label:'Score 3',val:k.score3,cls:'s3'},
+      {label:'Score 4',val:k.score4,cls:'s4'},
+      {label:'Score 5',val:k.score5,cls:'s5'},
+    ];
+    return `<tr>
+      <td>
+        <div class="obj-text">${k.objective}</div>
+        <div class="measure-text">${k.measure}</div>
+      </td>
+      <td style="text-align:center"><span class="w-chip">${w}%</span></td>
+      <td>
+        <div class="scores-grid">
+          ${scores.map(s=>`<div class="score-box ${s.cls}">
+            <div class="sl">${s.label}</div>
+            <div class="sv">${fmt(s.val,k.unit)}</div>
+            ${p.id==='2498'&&k.unit&&k.unit!=='%'&&k.unit!==''&&k.unit!=='GP_PCT'?`<div class="unit-tag">${k.unit}</div>`:''}
+          </div>`).join('')}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modalEl').innerHTML=`
+    <div class="modal-head">
+      <div class="modal-av av-${gcls}">${p.name[0]}</div>
+      <div>
+        <div class="modal-name">${p.name} <span style="font-size:14px;color:var(--text3);font-family:var(--mono)">#${p.id}</span></div>
+        <div class="modal-role">${p.role} · <span style="color:${GCOL[p.group]}">${p.group}</span></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="msec-title">KPI Targets — Score Levels</div>
+        <table class="kpi-table">
+          <thead><tr>
+            <th>Objective / KPI</th>
+            <th style="text-align:center">Weight</th>
+            <th>Targets by Score</th>
+          </tr></thead>
+          <tbody>${kpiRows}</tbody>
+        </table>
+      </div>
+      <div class="modal-section">
+        <div class="actual-section">
+          <div class="msec-title">Actual Achievement Input</div>
+          <div class="actual-hint">실적값을 입력하면 해당 KPI가 어느 Score 구간에 해당하는지 자동으로 표시됩니다.</div>
+          <div class="actual-grid" id="actualGrid_${p.id}">
+            ${p.kpis.map(k=>{
+              const saved = getActual(p.id, k.no);
+              const score = saved!=='' ? scoreOf(saved, k) : null;
+              const displayVal = saved!=='' && k.unit==='GP_PCT' ? (parseFloat(saved)*100).toFixed(0)+'%' : saved;
+              return `<div class="actual-row">
+                <span class="actual-label" title="${k.measure}">${k.no}. ${k.measure}</span>
+                <input class="actual-input" type="number" step="any"
+                  placeholder="${k.unit==='GP_PCT'?'e.g. 0.85':k.unit==='Months'?'e.g. 3.2':k.unit==='Qty'?'e.g. 2100':'e.g. 120000000'}"
+                  value="${saved}"
+                  id="ai_${p.id}_${k.no}"
+                  oninput="refreshBadge('${p.id}',${k.no})"
+                >
+                <span id="badge_${p.id}_${k.no}">${scoreBadge(score)}</span>
+              </div>`;
+            }).join('')}
+          </div>
+          <button class="btn-save-actual" onclick="saveActuals('${p.id}')">
+            ✓ &nbsp;저장
+          </button>
+          <div class="save-ok" id="saveOk_${p.id}">저장되었습니다</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open')}
+
+function refreshBadge(pid, kno){
+  const p = PEOPLE.find(x=>x.id===pid); if(!p) return;
+  const k = p.kpis.find(x=>x.no===kno); if(!k) return;
+  const val = document.getElementById(`ai_${pid}_${kno}`).value;
+  const score = val!=='' ? scoreOf(val, k) : null;
+  document.getElementById(`badge_${pid}_${kno}`).innerHTML = scoreBadge(score);
+}
+
+function saveActuals(pid){
+  const p = PEOPLE.find(x=>x.id===pid); if(!p) return;
+  p.kpis.forEach(k=>{
+    const el = document.getElementById(`ai_${pid}_${k.no}`);
+    if(el) setActual(pid, k.no, el.value);
+  });
+  render();
+  const ok = document.getElementById(`saveOk_${pid}`);
+  ok.style.display='block';
+  setTimeout(()=>{ ok.style.display='none'; }, 2000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+renderLegend();
+renderCards();
+render();
+</script>
+</body>
+</html>
